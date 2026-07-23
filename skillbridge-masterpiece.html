@@ -1,0 +1,1283 @@
+
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>SkillBridge AI</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #090d16;
+      --surface: rgba(30,41,59,0.7);
+      --fg: #f0f0f0;
+      --muted: #8892a4;
+      --border: rgba(255,255,255,0.1);
+      --accent: #6366f1;
+      --accent2: #8b5cf6;
+      --accent3: #d946ef;
+      --emerald: #10b981;
+      --tab-h: 64px;
+      --font-display: 'Outfit', system-ui, sans-serif;
+      --font-body: 'Plus Jakarta Sans', system-ui, sans-serif;
+    }
+    html, body { width: 100%; height: 100%; overflow: hidden; background: var(--bg); color: var(--fg); font-family: var(--font-body); -webkit-font-smoothing: antialiased; }
+    :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+    button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    .bottom-tabs .tab:focus-visible { outline-offset: -2px; outline: 2px solid var(--accent); }
+    #three-canvas { position: fixed; inset: 0; z-index: 0; display: block; }
+
+    /* === LOADING SPLASH === */
+    #loading-splash {
+      position: fixed; inset: 0; z-index: 9999;
+      display: flex; align-items: center; justify-content: center;
+      flex-direction: column; gap: 24px;
+      background: var(--bg);
+      transition: opacity 0.8s cubic-bezier(0.22,1,0.36,1), visibility 0.8s;
+    }
+    #loading-splash.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+    .splash-logo { width: 72px; height: 72px; position: relative; }
+    .splash-logo svg { width: 100%; height: 100%; }
+    .splash-logo .ring { fill: none; stroke: url(#splashGrad); stroke-width: 2.5; stroke-dasharray: 200; stroke-dashoffset: 200; animation: drawRing 1.8s ease-out forwards; }
+    @keyframes drawRing { to { stroke-dashoffset: 0; } }
+    .splash-logo .inner { opacity: 0; animation: fadeIn 0.6s 0.6s forwards; }
+    @keyframes fadeIn { to { opacity: 1; } }
+    .splash-bar {
+      width: 180px; height: 3px; border-radius: 3px;
+      background: rgba(255,255,255,0.06); overflow: hidden;
+    }
+    .splash-bar-fill {
+      height: 100%; width: 0%; border-radius: 3px;
+      background: linear-gradient(90deg, var(--accent), var(--accent2), var(--accent3));
+      animation: loadBar 1.4s 0.3s cubic-bezier(0.22,1,0.36,1) forwards;
+    }
+    @keyframes loadBar { to { width: 100%; } }
+    .splash-text { font-family: var(--font-display); font-size: 13px; color: var(--muted); letter-spacing: 0.06em; text-transform: uppercase; opacity: 0; animation: fadeIn 0.5s 0.8s forwards; }
+
+    /* === PERSPECTIVE PAGE CONTAINER === */
+    .page-container {
+      position: fixed; inset: 0; bottom: var(--tab-h); z-index: 1;
+      perspective: 1200px; perspective-origin: 50% 50%;
+      overflow: hidden; pointer-events: none;
+    }
+    .tab-page {
+      position: absolute; inset: 0;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      pointer-events: auto;
+      opacity: 0; visibility: hidden;
+      transition: transform 0.5s cubic-bezier(0.22,1,0.36,1), opacity 0.4s ease;
+      transform: translateX(40%) rotateY(-12deg) scale(0.92);
+      transform-origin: left center;
+      will-change: transform, opacity;
+    }
+    .tab-page.active {
+      opacity: 1; visibility: visible; pointer-events: auto;
+      transform: translateX(0) rotateY(0deg) scale(1);
+      transition: transform 0.5s cubic-bezier(0.22,1,0.36,1), opacity 0.4s ease;
+    }
+    .tab-page.exit {
+      opacity: 0; pointer-events: none;
+      transform: translateX(-40%) rotateY(12deg) scale(0.92);
+      transition: transform 0.5s cubic-bezier(0.22,1,0.36,1), opacity 0.35s ease;
+    }
+    .tab-page::-webkit-scrollbar { width: 4px; }
+    .tab-page::-webkit-scrollbar-track { background: transparent; }
+    .tab-page::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+    /* === PROGRESSIVE REVEAL === */
+    .reveal-item {
+      opacity: 0; transform: translateY(16px);
+      transition: opacity 0.45s cubic-bezier(0.22,1,0.36,1), transform 0.45s cubic-bezier(0.22,1,0.36,1);
+    }
+    .reveal-item.revealed { opacity: 1; transform: translateY(0); }
+
+    /* === BOTTOM TABS === */
+    .bottom-tabs {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      height: var(--tab-h);
+      background: rgba(9,13,22,0.92);
+      backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+      border-top: 1px solid var(--border);
+      display: flex; z-index: 100;
+      padding-bottom: env(safe-area-inset-bottom, 0);
+    }
+    .bottom-tabs .tab {
+      flex: 1; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 2px;
+      background: none; border: none; color: var(--muted);
+      font-family: var(--font-body); font-size: 11px; font-weight: 500;
+      cursor: pointer; transition: color 0.2s; padding: 4px 0; position: relative;
+    }
+    .bottom-tabs .tab svg { width: 22px; height: 22px; opacity: 0.6; transition: opacity 0.2s; }
+    .bottom-tabs .tab.active { color: var(--accent); }
+    .bottom-tabs .tab.active svg { opacity: 1; }
+    .bottom-tabs .tab::before {
+      content: ''; position: absolute; top: 0; left: 30%; right: 30%; height: 2px;
+      background: linear-gradient(90deg, var(--accent), var(--accent3));
+      border-radius: 0 0 2px 2px; opacity: 0; transition: opacity 0.2s;
+    }
+    .bottom-tabs .tab.active::before { opacity: 1; }
+    .ui-layer { position: relative; width: 100%; min-height: 100%; pointer-events: auto; }
+
+    /* === HERO / HOME === */
+    .hero-page { display: flex; flex-direction: column; }
+    nav {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 16px 24px;
+      background: var(--surface); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border); flex-shrink: 0;
+    }
+    nav .brand { display: flex; align-items: center; gap: 10px; font-family: var(--font-display); font-weight: 700; font-size: 18px; color: var(--fg); }
+    nav .brand svg { width: 28px; height: 28px; }
+    nav .nav-links { display: flex; align-items: center; gap: 16px; }
+    .sdg-badge {
+      padding: 4px 12px; border-radius: 999px;
+      background: rgba(16,185,129,0.12); border: 1px solid rgba(16,185,129,0.2);
+      color: var(--emerald); font-size: 11px; font-weight: 600; letter-spacing: 0.06em;
+    }
+    .audio-indicator {
+      display: flex; align-items: center; gap: 3px;
+      padding: 6px 12px; border-radius: 999px;
+      background: rgba(99,102,241,0.12); border: 1px solid rgba(99,102,241,0.2);
+    }
+    .audio-indicator .bar {
+      width: 3px; height: 14px; border-radius: 2px;
+      background: var(--accent);
+      animation: pulse 0.8s ease-in-out infinite alternate;
+    }
+    .audio-indicator .bar:nth-child(2) { animation-delay: 0.15s; height: 20px; }
+    .audio-indicator .bar:nth-child(3) { animation-delay: 0.3s; height: 10px; }
+    .audio-indicator .bar:nth-child(4) { animation-delay: 0.45s; height: 18px; }
+    .audio-indicator .bar:nth-child(5) { animation-delay: 0.6s; height: 12px; }
+    @keyframes pulse {
+      0% { transform: scaleY(0.5); opacity: 0.5; }
+      100% { transform: scaleY(1); opacity: 1; }
+    }
+    .hero {
+      flex: 1; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; text-align: center;
+      padding: 40px 24px;
+    }
+    .hero h1 {
+      font-family: var(--font-display);
+      font-size: clamp(36px, 8vw, 80px); font-weight: 800;
+      background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 40%, #d946ef 70%, #10b981 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+      letter-spacing: -0.03em; line-height: 1.05; margin-bottom: 16px;
+    }
+    .hero p {
+      font-size: clamp(15px, 2.5vw, 22px); color: var(--muted);
+      max-width: 600px; margin-bottom: 32px; line-height: 1.6;
+    }
+    .hero .cta-group { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+    .btn-primary {
+      padding: 14px 32px; border-radius: 12px; border: none;
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      color: #fff; font-family: var(--font-display); font-weight: 600; font-size: 15px;
+      cursor: pointer; transition: all 0.3s cubic-bezier(0.22,1,0.36,1);
+    }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 12px 40px rgba(99,102,241,0.3); }
+    .btn-secondary {
+      padding: 14px 32px; border-radius: 12px;
+      border: 1px solid var(--border); background: var(--surface);
+      color: var(--fg); font-family: var(--font-display); font-weight: 500; font-size: 15px;
+      cursor: pointer; transition: all 0.3s; backdrop-filter: blur(8px);
+    }
+    .btn-secondary:hover { border-color: var(--accent); }
+
+    /* === VOICE TAB === */
+    .chat-container {
+      display: flex; flex-direction: column;
+      max-width: 520px; width: 100%; margin: 0 auto;
+      padding: 20px 16px; flex: 1; min-height: 0;
+    }
+    .chat-header { text-align: center; margin-bottom: 16px; }
+    .chat-header h2 {
+      font-family: var(--font-display); font-size: 18px; font-weight: 600;
+      background: linear-gradient(135deg,#6366f1,#10b981);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .chat-header p { font-size: 12px; color: var(--muted); margin-top: 2px; }
+    .messages {
+      flex: 1; overflow-y: auto;
+      display: flex; flex-direction: column; gap: 10px;
+      padding: 8px 0;
+      scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.1) transparent;
+    }
+    .msg {
+      max-width: 88%; padding: 12px 16px; border-radius: 16px;
+      font-size: 14px; line-height: 1.5;
+      animation: msgIn 0.3s ease-out;
+    }
+    @keyframes msgIn { from { opacity:0; transform: translateY(8px); } to { opacity:1; transform:translateY(0); } }
+    .msg.bot {
+      align-self: flex-start;
+      background: var(--surface); border: 1px solid var(--border);
+      border-bottom-left-radius: 4px; backdrop-filter: blur(12px);
+    }
+    .msg.user {
+      align-self: flex-end;
+      background: linear-gradient(135deg, rgba(99,102,241,0.3), rgba(139,92,246,0.2));
+      border: 1px solid rgba(99,102,241,0.2);
+      border-bottom-right-radius: 4px;
+    }
+    .input-area {
+      display: flex; gap: 8px; padding: 12px 0;
+      border-top: 1px solid var(--border); flex-shrink: 0;
+    }
+    .input-area input {
+      flex: 1; padding: 12px 16px; border-radius: 12px;
+      border: 1px solid var(--border); background: var(--surface);
+      color: var(--fg); font-family: var(--font-body); font-size: 14px; outline: none;
+      backdrop-filter: blur(8px);
+    }
+    .input-area input::placeholder { color: var(--muted); }
+    .input-area input:focus { border-color: var(--accent); }
+    .mic-btn {
+      width: 44px; height: 44px; border-radius: 50%;
+      border: 1px solid var(--border); background: var(--surface);
+      color: var(--fg); cursor: pointer;
+      display: grid; place-items: center;
+      transition: all 0.3s; backdrop-filter: blur(8px); flex-shrink: 0;
+    }
+    .mic-btn.active {
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      border-color: transparent; box-shadow: 0 0 20px rgba(99,102,241,0.3);
+    }
+    .mic-btn svg { width: 20px; height: 20px; }
+    .send-btn {
+      padding: 0 20px; border-radius: 12px; border: none;
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      color: #fff; font-family: var(--font-display); font-weight: 600; font-size: 13px;
+      cursor: pointer; transition: all 0.2s; flex-shrink: 0;
+    }
+    .send-btn:hover { box-shadow: 0 4px 16px rgba(99,102,241,0.3); }
+    .send-btn:disabled {
+      background: rgba(255,255,255,0.06); color: var(--muted); cursor: default;
+      box-shadow: none;
+    }
+
+    /* === RESUME TAB === */
+    .resume-wrap { display: flex; align-items: center; justify-content: center; padding: 24px 16px; min-height: 100%; }
+    .resume-card {
+      width: 100%; max-width: 800px;
+      background: #fff; border-radius: 16px;
+      padding: 40px 48px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+      color: #111; font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+      transform-style: preserve-3d;
+      transition: transform 0.4s cubic-bezier(0.22,1,0.36,1);
+    }
+    .resume-card:hover { transform: rotateX(2deg) rotateY(-2deg) scale(1.01); }
+    .resume-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; }
+    .resume-header .name { font-family: 'Outfit', system-ui, sans-serif; font-size: 28px; font-weight: 700; letter-spacing: -0.02em; }
+    .resume-header .title { color: #6366f1; font-weight: 600; font-size: 14px; margin-top: 2px; }
+    .resume-header .contact { text-align: right; font-size: 12px; color: #555; line-height: 1.6; }
+    .resume-divider { height: 1px; background: #e0e0e0; margin: 20px 0; }
+    .resume-section-title { font-family: 'Outfit', system-ui, sans-serif; font-size: 14px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #6366f1; margin-bottom: 12px; }
+    .skills { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px; }
+    .skill-chip {
+      padding: 4px 12px; border-radius: 999px; font-size: 11px; font-weight: 500;
+    }
+    .skill-chip.blue { background: rgba(99,102,241,0.1); color: #6366f1; border: 1px solid rgba(99,102,241,0.15); }
+    .skill-chip.green { background: rgba(16,185,129,0.1); color: #10b981; border: 1px solid rgba(16,185,129,0.15); }
+    .skill-chip.purple { background: rgba(139,92,246,0.1); color: #8b5cf6; border: 1px solid rgba(139,92,246,0.15); }
+    .skill-chip.pink { background: rgba(217,70,239,0.1); color: #d946ef; border: 1px solid rgba(217,70,239,0.15); }
+    .exp-item { margin-bottom: 16px; }
+    .exp-item h4 { font-size: 14px; font-weight: 600; }
+    .exp-item .meta { font-size: 12px; color: #666; margin-bottom: 4px; }
+    .exp-item p { font-size: 13px; color: #333; line-height: 1.5; }
+    .edu-item { font-size: 13px; line-height: 1.6; }
+    .edu-item strong { font-weight: 600; }
+
+    /* === JOBS TAB === */
+    .jobs-wrap { padding: 24px 16px 32px; min-height: 100%; }
+    .page-header { text-align: center; margin-bottom: 24px; }
+    .page-header h2 {
+      font-family: var(--font-display); font-size: 24px; font-weight: 700;
+      background: linear-gradient(135deg,#6366f1,#10b981);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .page-header p { font-size: 13px; color: var(--muted); margin-top: 4px; }
+    .jobs-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 16px; max-width: 1200px; margin: 0 auto;
+    }
+    .job-card {
+      background: var(--surface); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--border); border-radius: 16px; padding: 20px;
+      transition: all 0.35s cubic-bezier(0.22,1,0.36,1);
+      position: relative; overflow: hidden;
+    }
+    .job-card::before {
+      content: ''; position: absolute; inset: 0; border-radius: 16px; padding: 1px;
+      background: linear-gradient(135deg, rgba(99,102,241,0.2), rgba(217,70,239,0.1));
+      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor; mask-composite: exclude;
+      pointer-events: none;
+    }
+    .job-card:hover { transform: translateY(-4px); border-color: rgba(99,102,241,0.3); box-shadow: 0 12px 40px rgba(99,102,241,0.12); }
+    .job-card .top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+    .job-card .company { font-size: 12px; color: var(--muted); font-weight: 500; }
+    .job-card .title { font-family: var(--font-display); font-size: 16px; font-weight: 600; margin: 2px 0 6px; }
+    .job-card .tags { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 10px; }
+    .job-card .tags span {
+      padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 500;
+      background: rgba(99,102,241,0.1); color: var(--accent); border: 1px solid rgba(99,102,241,0.15);
+    }
+    .job-card .bottom { display: flex; justify-content: space-between; align-items: center; padding-top: 10px; border-top: 1px solid var(--border); }
+    .job-card .salary { font-family: var(--font-display); font-size: 14px; font-weight: 600; color: var(--emerald); }
+    .match-ring { position: relative; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; }
+    .match-ring svg { width: 40px; height: 40px; transform: rotate(-90deg); }
+    .match-ring .bg { fill: none; stroke: rgba(255,255,255,0.05); stroke-width: 3; }
+    .match-ring .progress { fill: none; stroke-width: 3; stroke-linecap: round; }
+    .match-ring .label { position: absolute; font-size: 11px; font-weight: 700; letter-spacing: -0.01em; }
+    .apply-btn {
+      padding: 6px 16px; border-radius: 8px; border: none;
+      background: linear-gradient(135deg, #6366f1, #8b5cf6); color: #fff;
+      font-family: var(--font-display); font-weight: 600; font-size: 12px;
+      cursor: pointer; transition: all 0.2s;
+    }
+    .apply-btn:hover { box-shadow: 0 4px 16px rgba(99,102,241,0.3); }
+    .apply-btn.applied { background: rgba(16,185,129,0.2); color: var(--emerald); pointer-events: none; opacity: 0.7; }
+
+    /* === ROADMAP TAB === */
+    .roadmap-wrap { padding: 24px 16px 32px; min-height: 100%; }
+    .roadmap { max-width: 700px; margin: 0 auto; position: relative; }
+    .roadmap::before {
+      content: ''; position: absolute; left: 23px; top: 0; bottom: 0;
+      width: 2px;
+      background: linear-gradient(to bottom, #6366f1, #8b5cf6, #d946ef, #10b981);
+      opacity: 0.4;
+    }
+    .step { display: flex; gap: 16px; margin-bottom: 20px; position: relative; }
+    .step .node {
+      width: 48px; height: 48px; flex-shrink: 0;
+      border-radius: 50%; display: flex; align-items: center; justify-content: center;
+      font-size: 13px; font-weight: 700; font-family: var(--font-display);
+      position: relative; z-index: 1; transition: all 0.3s;
+    }
+    .step .node.completed {
+      background: linear-gradient(135deg, #10b981, #059669);
+      box-shadow: 0 0 20px rgba(16,185,129,0.3);
+    }
+    .step .node.in-progress {
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      box-shadow: 0 0 20px rgba(99,102,241,0.3);
+      animation: pulseNode 2s ease-in-out infinite;
+    }
+    .step .node.locked {
+      background: rgba(30,41,59,0.5);
+      border: 2px solid var(--border); color: var(--muted);
+    }
+    @keyframes pulseNode {
+      0%,100% { box-shadow: 0 0 12px rgba(99,102,241,0.2); }
+      50% { box-shadow: 0 0 28px rgba(99,102,241,0.5); }
+    }
+    .step .content {
+      flex: 1;
+      background: var(--surface); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--border); border-radius: 12px;
+      padding: 14px 18px; transition: all 0.3s;
+    }
+    .step .content h4 { font-family: var(--font-display); font-size: 14px; font-weight: 600; }
+    .step .content p { font-size: 12px; color: var(--muted); margin-top: 2px; line-height: 1.5; }
+    .step .content .status-badge {
+      display: inline-block; margin-top: 6px;
+      padding: 2px 8px; border-radius: 999px;
+      font-size: 11px; font-weight: 600; letter-spacing: 0.03em;
+    }
+    .status-badge.completed { background: rgba(16,185,129,0.12); color: var(--emerald); border: 1px solid rgba(16,185,129,0.2); }
+    .status-badge.in-progress { background: rgba(99,102,241,0.12); color: var(--accent); border: 1px solid rgba(99,102,241,0.2); }
+    .status-badge.locked { background: rgba(136,146,164,0.1); color: var(--muted); border: 1px solid rgba(255,255,255,0.05); }
+
+    @media (max-width:600px) {
+      .resume-card { padding: 24px 20px; }
+      .resume-header { flex-direction: column; }
+      .resume-header .contact { text-align: left; margin-top: 8px; }
+      .jobs-grid { grid-template-columns: 1fr; }
+      nav { padding: 12px 16px; }
+      .hero { padding: 24px 16px; }
+      .chat-container { padding: 12px; }
+      .step .node { width: 40px; height: 40px; font-size: 11px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .tab-page, .tab-page.active, .tab-page.exit { transition: none !important; transform: none !important; opacity: 1 !important; }
+      .reveal-item, .reveal-item.revealed { transition: none !important; opacity: 1 !important; transform: none !important; }
+      .mic-btn, .mic-btn.active, .btn-primary, .btn-secondary, .apply-btn { transition: none !important; }
+      .splash-logo .ring { animation: none; stroke-dashoffset: 0; }
+      .splash-logo .inner { animation: none; opacity: 1; }
+      .splash-bar-fill { animation: none; width: 100%; }
+      .splash-text { animation: none; opacity: 1; }
+      .job-card { transition: none !important; }
+      .resume-card, .resume-card:hover { transition: none !important; transform: none !important; }
+      .step .node.in-progress { animation: none; }
+      .audio-indicator .bar { animation: none; opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+  <svg style="position:absolute;width:0;height:0;">
+    <defs>
+      <linearGradient id="splashGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#6366f1"/>
+        <stop offset="50%" stop-color="#8b5cf6"/>
+        <stop offset="100%" stop-color="#d946ef"/>
+      </linearGradient>
+    </defs>
+  </svg>
+
+  <!-- LOADING SPLASH -->
+  <div id="loading-splash">
+    <div class="splash-logo">
+      <svg viewBox="0 0 72 72" fill="none">
+        <circle class="ring" cx="36" cy="36" r="30"/>
+        <g class="inner">
+          <path d="M36 14L14 30v24l22 14 22-14V30L36 14z" stroke="url(#splashGrad)" stroke-width="2" fill="none"/>
+          <path d="M36 32l-11 6v12l11 6 11-6V38l-11-6z" stroke="url(#splashGrad)" stroke-width="1.2" fill="none" opacity="0.6"/>
+        </g>
+      </svg>
+    </div>
+    <div class="splash-bar"><div class="splash-bar-fill"></div></div>
+    <div class="splash-text">Preparing your experience</div>
+  </div>
+
+  <canvas id="three-canvas"></canvas>
+
+  <div class="page-container" id="pageContainer">
+    <!-- Tab 0: Home / Hero -->
+    <div class="tab-page active" data-tab="0" data-visited="false" role="tabpanel" id="panel-0" aria-labelledby="tab-0">
+      <div class="ui-layer hero-page">
+        <nav>
+          <a class="brand" href="#">
+            <svg viewBox="0 0 32 32" fill="none"><path d="M16 2L4 10v12l12 8 12-8V10L16 2z" stroke="url(#bg)" stroke-width="1.8" fill="none"/><path d="M16 16l-7-4v8l7 4 7-4v-8l-7 4z" stroke="url(#bg2)" stroke-width="1.3" fill="none"/><defs><linearGradient id="bg" x1="4" y1="2" x2="28" y2="30"><stop stop-color="#6366f1"/><stop offset="1" stop-color="#d946ef"/></linearGradient><linearGradient id="bg2" x1="9" y1="12" x2="23" y2="24"><stop stop-color="#8b5cf6"/><stop offset="1" stop-color="#10b981"/></linearGradient></defs></svg>
+            SkillBridge AI
+          </a>
+          <div class="nav-links">
+            <span class="sdg-badge">SDG 8</span>
+            <div class="audio-indicator">
+              <span class="bar"></span><span class="bar"></span><span class="bar"></span><span class="bar"></span><span class="bar"></span>
+            </div>
+          </div>
+        </nav>
+        <div class="hero">
+          <h1 class="reveal-item">Bridge Skills.<br/>Build Futures.</h1>
+          <p class="reveal-item">AI-powered talent matching that connects people with meaningful work — aligning skills, aspirations, and opportunity.</p>
+          <div class="cta-group">
+            <button class="btn-primary reveal-item" onclick="window.switchTab(3)">Explore Jobs</button>
+            <button class="btn-secondary reveal-item" onclick="window.switchTab(2)">View Resume</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab 1: Voice -->
+    <div class="tab-page" data-tab="1" data-visited="false" role="tabpanel" id="panel-1" aria-labelledby="tab-1">
+      <div class="ui-layer" style="display:flex;flex-direction:column;height:100%;">
+        <div class="chat-container" style="flex:1;display:flex;flex-direction:column;">
+          <div class="chat-header">
+            <h2 class="reveal-item">Voice Assistant</h2>
+            <p class="reveal-item">Ask about jobs, skills, or career paths</p>
+          </div>
+          <div class="messages" id="chatMessages" role="log" aria-live="polite" aria-label="Chat messages">
+            <div class="msg bot reveal-item">Hi! I'm your SkillBridge AI assistant. Try asking about job matches, skill gaps, or career roadmap.</div>
+          </div>
+          <div class="input-area">
+            <button class="mic-btn reveal-item" id="micBtn" aria-label="Toggle microphone">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="2" width="6" height="11" rx="3"/><path d="M5 12a7 7 0 0 0 14 0"/><line x1="12" y1="19" x2="12" y2="22"/></svg>
+            </button>
+            <input type="text" id="chatInput" placeholder="Type a message..." class="reveal-item" />
+            <button class="send-btn reveal-item" id="sendBtn">Send</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab 2: Resume -->
+    <div class="tab-page" data-tab="2" data-visited="false" role="tabpanel" id="panel-2" aria-labelledby="tab-2">
+      <div class="ui-layer resume-wrap">
+        <div class="resume-card reveal-item">
+          <div class="resume-header">
+            <div>
+              <div class="name">Alexandra Chen</div>
+              <div class="title">Senior Full-Stack Engineer</div>
+            </div>
+            <div class="contact">
+              alex.chen@email.com<br/>
+              +1 (555) 234-5678<br/>
+              linkedin.com/in/alexchen<br/>
+              San Francisco, CA
+            </div>
+          </div>
+          <div class="resume-divider"></div>
+          <div class="resume-section-title">Professional Summary</div>
+          <p style="font-size:13px;color:#333;line-height:1.6;margin-bottom:16px;">Full-stack engineer with 7+ years building scalable web applications. Expert in React, Node.js, and cloud-native architecture. Passionate about AI-driven developer tools and inclusive hiring practices.</p>
+          <div class="resume-divider"></div>
+          <div class="resume-section-title">Skills</div>
+          <div class="skills">
+            <span class="skill-chip blue">React</span><span class="skill-chip blue">TypeScript</span><span class="skill-chip blue">Node.js</span>
+            <span class="skill-chip green">Python</span><span class="skill-chip green">AWS</span><span class="skill-chip green">Docker</span>
+            <span class="skill-chip purple">GraphQL</span><span class="skill-chip purple">PostgreSQL</span><span class="skill-chip purple">Redis</span>
+            <span class="skill-chip pink">Figma</span><span class="skill-chip pink">Next.js</span><span class="skill-chip pink">Tailwind</span>
+            <span class="skill-chip blue">CI/CD</span><span class="skill-chip green">Kubernetes</span><span class="skill-chip purple">Terraform</span>
+          </div>
+          <div class="resume-divider"></div>
+          <div class="resume-section-title">Experience</div>
+          <div class="exp-item"><h4>Senior Full-Stack Engineer — TechCorp</h4><div class="meta">Jan 2022 – Present · 3 yrs</div><p>Architected micro-frontend platform serving 2M+ daily users. Reduced CI pipeline time by 60% and led migration to Next.js 14.</p></div>
+          <div class="exp-item"><h4>Full-Stack Developer — InnoVista Labs</h4><div class="meta">Jun 2019 – Dec 2021 · 2.5 yrs</div><p>Built real-time collaboration features used by 500+ enterprise teams. Implemented WebRTC-based document co-editing and GraphQL federation layer.</p></div>
+          <div class="exp-item"><h4>Junior Developer — StartGrid</h4><div class="meta">Mar 2017 – May 2019 · 2.2 yrs</div><p>Developed REST APIs and React component library. Contributed to open-source design system adopted by 12 product teams.</p></div>
+          <div class="resume-divider"></div>
+          <div class="resume-section-title">Education</div>
+          <div class="edu-item"><strong>M.S. Computer Science</strong> — Stanford University, 2017<br/><strong>B.S. Software Engineering</strong> — UC Berkeley, 2015</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab 3: Jobs -->
+    <div class="tab-page" data-tab="3" data-visited="false" role="tabpanel" id="panel-3" aria-labelledby="tab-3">
+      <div class="ui-layer jobs-wrap">
+        <div class="page-header">
+          <h2 class="reveal-item">Job Matches</h2>
+          <p class="reveal-item">AI-curated positions based on your skills and preferences</p>
+        </div>
+        <div class="jobs-grid" id="jobsGrid"></div>
+      </div>
+    </div>
+
+    <!-- Tab 4: Roadmap -->
+    <div class="tab-page" data-tab="4" data-visited="false" role="tabpanel" id="panel-4" aria-labelledby="tab-4">
+      <div class="ui-layer roadmap-wrap">
+        <div class="page-header">
+          <h2 class="reveal-item">Upskilling Roadmap</h2>
+          <p class="reveal-item">14-step personalized learning journey powered by AI</p>
+        </div>
+        <div class="roadmap" id="roadmap"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="bottom-tabs" role="tablist" aria-label="App sections">
+    <button class="tab active" data-tab="0" onclick="window.switchTab(0)" aria-current="page" role="tab" aria-selected="true" id="tab-0" aria-controls="panel-0">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+      <span>Home</span>
+    </button>
+    <button class="tab" data-tab="1" onclick="window.switchTab(1)" role="tab" aria-selected="false" id="tab-1" aria-controls="panel-1">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m-4 0h8"/><rect x="9" y="2" width="6" height="11" rx="3"/><path d="M5 12a7 7 0 0014 0"/></svg>
+      <span>Voice</span>
+    </button>
+    <button class="tab" data-tab="2" onclick="window.switchTab(2)" role="tab" aria-selected="false" id="tab-2" aria-controls="panel-2">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 12h6M9 16h6"/><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="2" x2="8" y2="4"/><line x1="16" y1="2" x2="16" y2="4"/></svg>
+      <span>Resume</span>
+    </button>
+    <button class="tab" data-tab="3" onclick="window.switchTab(3)" role="tab" aria-selected="false" id="tab-3" aria-controls="panel-3">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/><path d="M16 11l-4 4-2-2"/></svg>
+      <span>Jobs</span>
+    </button>
+    <button class="tab" data-tab="4" onclick="window.switchTab(4)" role="tab" aria-selected="false" id="tab-4" aria-controls="panel-4">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+      <span>Roadmap</span>
+    </button>
+  </nav>
+
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+    }
+  }
+  </script>
+
+  <script type="module">
+    import * as THREE from 'three';
+    import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+    import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+    import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+
+    var activeTabIdx = 0;
+    var visitedTabs = {};
+    var scrollValues = [0,0,0,0,0];
+    var mouseX = 0, mouseY = 0;
+    var smoothMX = 0, smoothMY = 0;
+
+    // === Three.js setup ===
+    var canvas = document.getElementById('three-canvas');
+    var renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true, antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.2;
+
+    // === Scene definitions ===
+    var scenes = [];
+
+    function makeScene(config) {
+      var scene = new THREE.Scene();
+      var camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+      camera.position.set(config.camX || 0, config.camY || 0, config.camZ || 25);
+
+      var composer = new EffectComposer(renderer);
+      composer.addPass(new RenderPass(scene, camera));
+      var bloom = new UnrealBloomPass(
+        new THREE.Vector2(window.innerWidth, window.innerHeight),
+        config.bloomStrength || 0.3,
+        config.bloomRadius || 0.5,
+        config.bloomThreshold || 0.1
+      );
+      composer.addPass(bloom);
+
+      var ambient = new THREE.AmbientLight(0x222244, 0.5);
+      scene.add(ambient);
+
+      return {
+        scene: scene,
+        camera: camera,
+        composer: composer,
+        bloom: bloom,
+        userData: config.userData || null,
+        animate: config.animate || function(){}
+      };
+    }
+
+    // ---- Scene 0: Home — geometric hero cluster with bloom ----
+    (function(){
+      var s = makeScene({
+        camZ: 24,
+        bloomStrength: 0.6,
+        bloomRadius: 0.8,
+        bloomThreshold: 0.05
+      });
+
+      // Hero model: geometric cluster
+      var group = new THREE.Group();
+
+      // Central icosahedron with wireframe + solid
+      var icoGeo = new THREE.IcosahedronGeometry(2.8, 1);
+      var icoMat = new THREE.MeshPhysicalMaterial({
+        color: 0x6366f1,
+        metalness: 0.3,
+        roughness: 0.2,
+        transparent: true,
+        opacity: 0.25,
+        wireframe: false,
+        envMapIntensity: 0.6
+      });
+      var ico = new THREE.Mesh(icoGeo, icoMat);
+      group.add(ico);
+
+      var wireIco = new THREE.Mesh(
+        new THREE.IcosahedronGeometry(3.0, 1),
+        new THREE.MeshBasicMaterial({ color: 0x8b5cf6, wireframe: true, transparent: true, opacity: 0.15 })
+      );
+      group.add(wireIco);
+
+      // Outer torus knot ring
+      var knotGeo = new THREE.TorusKnotGeometry(4.5, 1.2, 120, 8);
+      var knotMat = new THREE.MeshPhysicalMaterial({
+        color: 0xd946ef,
+        metalness: 0.6,
+        roughness: 0.1,
+        transparent: true,
+        opacity: 0.12,
+        wireframe: true,
+      });
+      var knot = new THREE.Mesh(knotGeo, knotMat);
+      group.add(knot);
+
+      // Orbiting small octahedra
+      var orbiters = [];
+      for (var i = 0; i < 8; i++) {
+        var octGeo = new THREE.OctahedronGeometry(0.4);
+        var octMat = new THREE.MeshPhysicalMaterial({
+          color: new THREE.Color().setHSL(0.65 + i * 0.04, 0.8, 0.55),
+          metalness: 0.5,
+          roughness: 0.2,
+          emissive: new THREE.Color().setHSL(0.65 + i * 0.04, 0.8, 0.3),
+          emissiveIntensity: 0.3
+        });
+        var oct = new THREE.Mesh(octGeo, octMat);
+        var angle = (i / 8) * Math.PI * 2;
+        var radius = 6.5;
+        oct.position.set(Math.cos(angle) * radius, Math.sin(angle * 2) * 2, Math.sin(angle) * radius);
+        group.add(oct);
+        orbiters.push({ mesh: oct, angle: angle, radius: radius, speed: 0.3 + Math.random() * 0.2, yOff: Math.random() * 4 });
+      }
+
+      s.scene.add(group);
+
+      // Particle sphere
+      var pCount = 3000;
+      var pos = new Float32Array(pCount * 3);
+      var cols = new Float32Array(pCount * 3);
+      var sizes = new Float32Array(pCount);
+      for (var i = 0; i < pCount; i++) {
+        var theta = Math.random() * Math.PI * 2;
+        var phi = Math.acos(2 * Math.random() - 1);
+        var r = 10 + Math.random() * 16;
+        pos[i*3] = r * Math.sin(phi) * Math.cos(theta);
+        pos[i*3+1] = r * Math.cos(phi);
+        pos[i*3+2] = r * Math.sin(phi) * Math.sin(theta);
+        var c = new THREE.Color();
+        c.setHSL(0.6 + Math.random() * 0.25, 0.7, 0.4 + Math.random() * 0.4);
+        cols[i*3] = c.r; cols[i*3+1] = c.g; cols[i*3+2] = c.b;
+        sizes[i] = 0.08 + Math.random() * 0.2;
+      }
+      var pGeo = new THREE.BufferGeometry();
+      pGeo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+      pGeo.setAttribute('color', new THREE.BufferAttribute(cols, 3));
+      pGeo.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+      var pMat = new THREE.PointsMaterial({
+        size: 0.15, vertexColors: true, transparent: true, opacity: 0.6,
+        blending: THREE.AdditiveBlending, sizeAttenuation: true
+      });
+      var field = new THREE.Points(pGeo, pMat);
+      s.scene.add(field);
+
+      // Directional lights
+      var light1 = new THREE.DirectionalLight(0x8b5cf6, 1.0);
+      light1.position.set(10, 15, 20);
+      s.scene.add(light1);
+      var light2 = new THREE.PointLight(0xd946ef, 0.5, 40);
+      light2.position.set(-10, -5, 10);
+      s.scene.add(light2);
+      var light3 = new THREE.PointLight(0x6366f1, 0.4, 30);
+      light3.position.set(5, -10, -15);
+      s.scene.add(light3);
+
+      s.userData = { field: field, group: group, knot: knot, orbiters: orbiters };
+
+      s.animate = function() {
+        var t = Date.now() * 0.0004;
+        group.rotation.x = Math.sin(t * 0.3) * 0.05;
+        group.rotation.y = t * 0.15;
+        group.rotation.z = Math.sin(t * 0.2) * 0.03;
+
+        for (var i = 0; i < orbiters.length; i++) {
+          var o = orbiters[i];
+          var a = o.angle + t * o.speed;
+          o.mesh.position.x = Math.cos(a) * o.radius;
+          o.mesh.position.z = Math.sin(a) * o.radius;
+          o.mesh.position.y = Math.sin(a * 2 + t) * 2;
+          o.mesh.rotation.x = t * 2 + i;
+          o.mesh.rotation.z = t * 1.5 + i * 0.5;
+        }
+
+        field.rotation.y = t * 0.05;
+        field.rotation.x = Math.sin(t * 0.1) * 0.04;
+
+        // Mouse parallax
+        smoothMX += (mouseX - smoothMX) * 0.03;
+        smoothMY += (mouseY - smoothMY) * 0.03;
+        s.camera.position.x = smoothMX * 3;
+        s.camera.position.y = -smoothMY * 3 + Math.sin(t * 0.2) * 0.5;
+
+        // Scroll-reactive: particles rotate with scroll
+        var sv = scrollValues[0] * 0.0005;
+        field.rotation.x += sv * 0.0003;
+        field.rotation.z += sv * 0.0002;
+        group.rotation.x += sv * 0.0001;
+
+        s.camera.lookAt(0, 0, 0);
+      };
+
+      scenes.push(s);
+    })();
+
+    // ---- Scene 1: Voice — radial wave bars + bloom ----
+    (function(){
+      var s = makeScene({
+        camZ: 20,
+        bloomStrength: 0.4,
+        bloomRadius: 0.3,
+        bloomThreshold: 0.1
+      });
+
+      var count = 2000;
+      var pos = new Float32Array(count * 3);
+      for (var i = 0; i < count; i++) {
+        pos[i*3] = (Math.random() - 0.5) * 50;
+        pos[i*3+1] = (Math.random() - 0.5) * 50;
+        pos[i*3+2] = (Math.random() - 0.5) * 50;
+      }
+      var geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+      var pMat = new THREE.PointsMaterial({
+        color: 0x10b981, size: 0.08, transparent: true, opacity: 0.4,
+        blending: THREE.AdditiveBlending
+      });
+      var particleSystem = new THREE.Points(geo, pMat);
+      s.scene.add(particleSystem);
+
+      var waveBars = [];
+      var barCount = 48;
+      var barMat = new THREE.MeshBasicMaterial({ color: 0x10b981, transparent: true, opacity: 0.25 });
+      for (var i = 0; i < barCount; i++) {
+        var barGeo = new THREE.BoxGeometry(0.25, 0.5, 0.25);
+        var bar = new THREE.Mesh(barGeo, barMat.clone());
+        var angle = (i / barCount) * Math.PI * 2;
+        var radius = 6.5;
+        bar.position.set(Math.cos(angle) * radius, 0, Math.sin(angle) * radius);
+        bar.lookAt(0, 0, 0);
+        s.scene.add(bar);
+        waveBars.push(bar);
+      }
+
+      var listening = false;
+      var micBtn = document.getElementById('micBtn');
+      if (micBtn) {
+        micBtn.addEventListener('click', function(){
+          listening = !listening;
+          this.classList.toggle('active');
+        });
+      }
+
+      s.userData = { waveBars: waveBars, particleSystem: particleSystem };
+      s.animate = function() {
+        var t = Date.now() * 0.003;
+        particleSystem.rotation.y += 0.0008;
+        particleSystem.rotation.x = Math.sin(t * 0.08) * 0.06;
+
+        for (var i = 0; i < waveBars.length; i++) {
+          var bar = waveBars[i];
+          var amp = listening
+            ? (2 + Math.sin(t + i * 0.3) * 1.5)
+            : (0.3 + Math.sin(t * 0.5 + i * 0.5) * 0.15);
+          bar.scale.y = Math.max(0.1, amp);
+          var baseOpacity = listening ? 0.3 : 0.12;
+          bar.material.opacity = baseOpacity + Math.sin(t + i * 0.3) * 0.12;
+          bar.position.y = bar.scale.y * 0.25;
+        }
+
+        // Mouse parallax
+        smoothMX += (mouseX - smoothMX) * 0.03;
+        smoothMY += (mouseY - smoothMY) * 0.03;
+        s.camera.position.x = smoothMX * 2.5 + Math.sin(t * 0.1) * 1.5;
+        s.camera.position.y = -smoothMY * 2;
+        s.camera.position.z = 20 + Math.sin(t * 0.05) * 0.5;
+
+        // Scroll-reactive
+        var sv = scrollValues[1] * 0.0004;
+        s.camera.position.z += sv * 0.5;
+        particleSystem.rotation.z += sv * 0.0002;
+
+        s.camera.lookAt(0, 0, 0);
+      };
+
+      scenes.push(s);
+    })();
+
+    // ---- Scene 2: Resume — floating indigo particles with bloom ----
+    (function(){
+      var s = makeScene({
+        camZ: 16,
+        bloomStrength: 0.25,
+        bloomRadius: 0.4,
+        bloomThreshold: 0.15
+      });
+
+      var count = 1200;
+      var pos = new Float32Array(count * 3);
+      var speeds = [];
+      for (var i = 0; i < count; i++) {
+        pos[i*3] = (Math.random() - 0.5) * 30;
+        pos[i*3+1] = (Math.random() - 0.5) * 40;
+        pos[i*3+2] = (Math.random() - 0.5) * 20 - 5;
+        speeds.push(0.2 + Math.random() * 0.8);
+      }
+      var geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+      var pMat = new THREE.PointsMaterial({
+        color: 0x6366f1, size: 0.1, transparent: true, opacity: 0.25,
+        blending: THREE.AdditiveBlending
+      });
+      var field = new THREE.Points(geo, pMat);
+      s.scene.add(field);
+
+      s.userData = { field: field, speeds: speeds };
+      s.animate = function() {
+        var t = Date.now() * 0.0002;
+        field.rotation.y += 0.0004;
+        field.rotation.x = Math.sin(t) * 0.04;
+
+        // Gentle vertical float
+        var positions = field.geometry.attributes.position.array;
+        for (var i = 0; i < count; i++) {
+          var idx = i * 3 + 1;
+          positions[idx] += Math.sin(Date.now() * 0.0005 * speeds[i] + i) * 0.002;
+          if (Math.abs(positions[idx]) > 20) positions[idx] *= -0.5;
+        }
+        field.geometry.attributes.position.needsUpdate = true;
+
+        // Mouse parallax
+        smoothMX += (mouseX - smoothMX) * 0.025;
+        smoothMY += (mouseY - smoothMY) * 0.025;
+        s.camera.position.x = smoothMX * 2;
+        s.camera.position.y = -smoothMY * 2;
+        s.camera.position.z = 16 + scrollValues[2] * 0.02;
+        s.camera.lookAt(0, 0, 0);
+      };
+
+      scenes.push(s);
+    })();
+
+    // ---- Scene 3: Jobs — purple star field with bloom ----
+    (function(){
+      var s = makeScene({
+        camZ: 18,
+        bloomStrength: 0.35,
+        bloomRadius: 0.5,
+        bloomThreshold: 0.1
+      });
+
+      var count = 1500;
+      var pos = new Float32Array(count * 3);
+      var origY = new Float32Array(count);
+      for (var i = 0; i < count; i++) {
+        pos[i*3] = (Math.random() - 0.5) * 60;
+        pos[i*3+1] = (Math.random() - 0.5) * 60;
+        pos[i*3+2] = (Math.random() - 0.5) * 40;
+        origY[i] = pos[i*3+1];
+      }
+      var geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+      var pMat = new THREE.PointsMaterial({
+        color: 0x8b5cf6, size: 0.1, transparent: true, opacity: 0.3,
+        blending: THREE.AdditiveBlending
+      });
+      var field = new THREE.Points(geo, pMat);
+      s.scene.add(field);
+
+      s.userData = { field: field, origY: origY, count: count };
+      s.animate = function() {
+        var t = Date.now() * 0.0003;
+        field.rotation.y += 0.0005;
+
+        // Twinkle: size variation
+        var sval = 0.08 + Math.sin(t * 2) * 0.04;
+        pMat.size = sval;
+
+        // Gentle wave
+        var positions = field.geometry.attributes.position.array;
+        for (var i = 0; i < count; i++) {
+          positions[i*3+1] = origY[i] + Math.sin(t * 2 + i * 0.1) * 1.5;
+        }
+        field.geometry.attributes.position.needsUpdate = true;
+
+        // Mouse parallax
+        smoothMX += (mouseX - smoothMX) * 0.03;
+        smoothMY += (mouseY - smoothMY) * 0.03;
+        s.camera.position.x = smoothMX * 3;
+        s.camera.position.y = -smoothMY * 2.5;
+        s.camera.position.z = 18 + scrollValues[3] * 0.015;
+        s.camera.lookAt(0, 0, 0);
+      };
+
+      scenes.push(s);
+    })();
+
+    // ---- Scene 4: Roadmap — spherical particle shell with bloom ----
+    (function(){
+      var s = makeScene({
+        camZ: 20,
+        bloomStrength: 0.45,
+        bloomRadius: 0.6,
+        bloomThreshold: 0.08
+      });
+
+      var count = 1500;
+      var pos = new Float32Array(count * 3);
+      var cols = new Float32Array(count * 3);
+      var origPos = new Float32Array(count * 3);
+      for (var i = 0; i < count; i++) {
+        var theta = Math.random() * Math.PI * 2;
+        var phi = Math.acos(2 * Math.random() - 1);
+        var r = 7 + Math.random() * 14;
+        pos[i*3] = r * Math.sin(phi) * Math.cos(theta);
+        pos[i*3+1] = r * Math.cos(phi);
+        pos[i*3+2] = r * Math.sin(phi) * Math.sin(theta);
+        origPos[i*3] = pos[i*3];
+        origPos[i*3+1] = pos[i*3+1];
+        origPos[i*3+2] = pos[i*3+2];
+        var c = new THREE.Color();
+        c.setHSL(0.55 + Math.random() * 0.3, 0.6, 0.4 + Math.random() * 0.3);
+        cols[i*3] = c.r; cols[i*3+1] = c.g; cols[i*3+2] = c.b;
+      }
+      var geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+      geo.setAttribute('color', new THREE.BufferAttribute(cols, 3));
+      var pMat = new THREE.PointsMaterial({
+        size: 0.1, vertexColors: true, transparent: true, opacity: 0.45,
+        blending: THREE.AdditiveBlending, sizeAttenuation: true
+      });
+      var field = new THREE.Points(geo, pMat);
+      s.scene.add(field);
+
+      var light = new THREE.PointLight(0xd946ef, 0.3, 40);
+      light.position.set(5, 10, 15);
+      s.scene.add(light);
+
+      var light2 = new THREE.PointLight(0x6366f1, 0.25, 35);
+      light2.position.set(-8, -5, 10);
+      s.scene.add(light2);
+
+      s.userData = { field: field, origPos: origPos, count: count };
+      s.animate = function() {
+        var t = Date.now() * 0.0003;
+        field.rotation.y = t * 0.08;
+        field.rotation.x = Math.sin(t * 0.12) * 0.05;
+
+        // Breathing motion
+        var positions = field.geometry.attributes.position.array;
+        var breathe = 1 + Math.sin(t * 1.5) * 0.08;
+        for (var i = 0; i < count; i++) {
+          positions[i*3] = origPos[i*3] * breathe;
+          positions[i*3+1] = origPos[i*3+1] * breathe;
+          positions[i*3+2] = origPos[i*3+2] * breathe;
+        }
+        field.geometry.attributes.position.needsUpdate = true;
+
+        // Mouse parallax
+        smoothMX += (mouseX - smoothMX) * 0.03;
+        smoothMY += (mouseY - smoothMY) * 0.03;
+        s.camera.position.x = smoothMX * 2.5;
+        s.camera.position.y = -smoothMY * 2;
+        s.camera.position.z = 20 + scrollValues[4] * 0.02;
+        s.camera.lookAt(0, 0, 0);
+      };
+
+      scenes.push(s);
+    })();
+
+    // === Render loop ===
+    function animate() {
+      requestAnimationFrame(animate);
+      var s = scenes[activeTabIdx];
+      if (s) {
+        s.animate();
+        s.camera.aspect = window.innerWidth / window.innerHeight;
+        s.camera.updateProjectionMatrix();
+        s.composer.render();
+      }
+    }
+
+    // === Scroll tracking ===
+    function setupScrollTracking() {
+      var pages = document.querySelectorAll('.tab-page');
+      pages.forEach(function(page, idx){
+        page.addEventListener('scroll', function(){
+          scrollValues[idx] = this.scrollTop;
+        }, { passive: true });
+      });
+    }
+
+    // === Mouse tracking ===
+    document.addEventListener('mousemove', function(e){
+      mouseX = (e.clientX / window.innerWidth - 0.5) * 2;
+      mouseY = (e.clientY / window.innerHeight - 0.5) * 2;
+    });
+    document.addEventListener('touchmove', function(e){
+      if (e.touches.length === 1) {
+        mouseX = (e.touches[0].clientX / window.innerWidth - 0.5) * 2;
+        mouseY = (e.touches[0].clientY / window.innerHeight - 0.5) * 2;
+      }
+    }, { passive: true });
+
+    // === Progressive reveal ===
+    function revealTabItems(tabIdx) {
+      var page = document.querySelector('.tab-page[data-tab="' + tabIdx + '"]');
+      if (!page) return;
+      var items = page.querySelectorAll('.reveal-item');
+      items.forEach(function(el, i){
+        setTimeout(function(){
+          el.classList.add('revealed');
+        }, 60 * i + 80);
+      });
+    }
+
+    // === Tab switching ===
+    window.switchTab = function(idx) {
+      if (idx === activeTabIdx) return;
+      var oldPage = document.querySelector('.tab-page[data-tab="' + activeTabIdx + '"]');
+      var newPage = document.querySelector('.tab-page[data-tab="' + idx + '"]');
+      if (!oldPage || !newPage) return;
+
+      oldPage.classList.remove('active');
+      oldPage.classList.add('exit');
+      setTimeout(function(){ oldPage.classList.remove('exit'); }, 500);
+
+      newPage.classList.add('active');
+      newPage.style.transform = 'none';
+      newPage.style.opacity = '1';
+
+      activeTabIdx = idx;
+
+      // Tab bar
+      document.querySelectorAll('.bottom-tabs .tab').forEach(function(el){
+        var isActive = parseInt(el.getAttribute('data-tab')) === idx;
+        el.classList.toggle('active', isActive);
+        if (isActive) { el.setAttribute('aria-current', 'page'); el.setAttribute('aria-selected', 'true'); }
+        else { el.removeAttribute('aria-current'); el.setAttribute('aria-selected', 'false'); }
+      });
+
+      // Progressive reveal on first visit
+      if (!visitedTabs[idx]) {
+        visitedTabs[idx] = true;
+        setTimeout(function(){ revealTabItems(idx); }, 100);
+      } else {
+        var items = newPage.querySelectorAll('.reveal-item');
+        items.forEach(function(el){ el.classList.add('revealed'); });
+      }
+    };
+
+    // === Resize ===
+    window.addEventListener('resize', function(){
+      for (var i = 0; i < scenes.length; i++) {
+        var s = scenes[i];
+        s.camera.aspect = window.innerWidth / window.innerHeight;
+        s.camera.updateProjectionMatrix();
+        s.composer.setSize(window.innerWidth, window.innerHeight);
+      }
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    // === Init ===
+    setupScrollTracking();
+    animate();
+
+    // Hide splash after scenes are ready
+    setTimeout(function(){
+      var splash = document.getElementById('loading-splash');
+      if (splash) splash.classList.add('hidden');
+      visitedTabs[0] = true;
+      setTimeout(function(){ revealTabItems(0); }, 120);
+    }, 1700);
+
+    // === Job cards data & render ===
+    (function(){
+      if (document.getElementById('jobsGrid')) {
+        var jobs = [
+          { company: "TechCorp", title: "Senior Frontend Engineer", tags: ["React","TypeScript","Next.js"], salary: "$145K–180K", match: 94, color: "#10b981" },
+          { company: "InnoVista", title: "Staff Full-Stack Developer", tags: ["Node.js","GraphQL","AWS"], salary: "$155K–195K", match: 91, color: "#10b981" },
+          { company: "DataFlow", title: "AI/ML Engineer", tags: ["Python","PyTorch","MLOps"], salary: "$160K–210K", match: 88, color: "#6366f1" },
+          { company: "CloudNine", title: "DevOps Platform Lead", tags: ["K8s","Terraform","CI/CD"], salary: "$150K–190K", match: 87, color: "#6366f1" },
+          { company: "Greenstone", title: "Product Designer (UX)", tags: ["Figma","Design Systems","Research"], salary: "$120K–155K", match: 85, color: "#8b5cf6" },
+          { company: "ShiftAI", title: "Backend Engineer — Go", tags: ["Go","PostgreSQL","gRPC"], salary: "$140K–175K", match: 83, color: "#8b5cf6" },
+          { company: "OrbitWorks", title: "Mobile Lead — React Native", tags: ["React Native","iOS","Android"], salary: "$135K–170K", match: 80, color: "#d946ef" },
+          { company: "Pinnacle", title: "Engineering Manager", tags: ["Leadership","Agile","Architecture"], salary: "$170K–220K", match: 78, color: "#d946ef" },
+          { company: "BaseLayer", title: "Security Engineer", tags: ["Security","PenTesting","IAM"], salary: "$130K–165K", match: 76, color: "#d946ef" },
+          { company: "VentureHub", title: "Technical Product Manager", tags: ["Product","Strategy","Analytics"], salary: "$145K–185K", match: 73, color: "#d946ef" },
+          { company: "NovaTech", title: "Data Engineer", tags: ["Spark","Airflow","BigQuery"], salary: "$130K–160K", match: 71, color: "#d946ef" },
+          { company: "BrightPath", title: "Junior Full-Stack Developer", tags: ["JavaScript","React","Python"], salary: "$85K–110K", match: 96, color: "#10b981" }
+        ];
+        var grid = document.getElementById('jobsGrid');
+        jobs.forEach(function(j, idx){
+          var card = document.createElement('div');
+          card.className = 'job-card reveal-item';
+          var circumference = 2 * Math.PI * 16;
+          var offset = circumference * (1 - j.match / 100);
+          card.innerHTML =
+            '<div class="top"><span class="company">' + j.company + '</span><div class="match-ring">' +
+            '<svg viewBox="0 0 40 40"><circle class="bg" cx="20" cy="20" r="16"/><circle class="progress" cx="20" cy="20" r="16" stroke-dasharray="' + circumference + '" stroke-dashoffset="' + offset + '" stroke="' + j.color + '"/></svg>' +
+            '<span class="label" style="color:' + j.color + '">' + j.match + '%</span></div></div>' +
+            '<div class="title">' + j.title + '</div>' +
+            '<div class="tags">' + j.tags.map(function(t){ return '<span>' + t + '</span>'; }).join('') + '</div>' +
+            '<div class="bottom"><span class="salary">' + j.salary + '</span><button class="apply-btn" data-idx="' + idx + '">Apply Now</button></div>';
+          grid.appendChild(card);
+        });
+        grid.querySelectorAll('.apply-btn').forEach(function(btn){
+          btn.addEventListener('click', function(){
+            this.textContent = 'Applied ✓';
+            this.classList.add('applied');
+            this.setAttribute('aria-disabled', 'true');
+          });
+        });
+      }
+    })();
+
+    // === Roadmap data & render ===
+    (function(){
+      if (document.getElementById('roadmap')) {
+        var steps = [
+          { title: "Career Foundation Assessment", desc: "AI evaluates current skills, experience, and career goals to build your baseline.", status: "completed" },
+          { title: "Core Programming: JavaScript Deep Dive", desc: "Master closures, promises, async/await, and ES6+ patterns used in 90% of interviews.", status: "completed" },
+          { title: "Frontend Architecture: React + TypeScript", desc: "Build production-grade components with proper typing, state management, and testing.", status: "completed" },
+          { title: "Backend Foundations: Node.js & APIs", desc: "RESTful API design, middleware patterns, authentication, and error handling.", status: "in-progress" },
+          { title: "Database Design & SQL", desc: "Schema design, indexing strategies, query optimization, and ORM patterns.", status: "in-progress" },
+          { title: "Cloud Fundamentals: AWS/GCP", desc: "Deploy, scale, and monitor applications using cloud-native services.", status: "locked" },
+          { title: "Containerization & Orchestration", desc: "Docker, Kubernetes, CI/CD pipelines, and infrastructure as code.", status: "locked" },
+          { title: "System Design & Architecture", desc: "Distributed systems, microservices, caching, and load balancing patterns.", status: "locked" },
+          { title: "AI/ML Engineering Fundamentals", desc: "LLMs, embeddings, RAG pipelines, and prompt engineering for production.", status: "locked" },
+          { title: "Testing & Quality Assurance", desc: "Unit, integration, E2E testing; TDD; property-based testing strategies.", status: "locked" },
+          { title: "Security Best Practices", desc: "OWASP Top 10, secure auth flows, encryption, and compliance fundamentals.", status: "locked" },
+          { title: "Performance Optimization", desc: "Profiling, caching strategies, CDN optimization, and Core Web Vitals.", status: "locked" },
+          { title: "Technical Leadership & Mentoring", desc: "Code reviews, architecture decisions, cross-team communication, and career growth.", status: "locked" },
+          { title: "Portfolio & Interview Preparation", desc: "Build showcase projects, practice system design interviews, and negotiate offers.", status: "locked" }
+        ];
+        var container = document.getElementById('roadmap');
+        steps.forEach(function(s, i){
+          var step = document.createElement('div');
+          step.className = 'step reveal-item';
+          var num = (i + 1).toString().padStart(2, '0');
+          step.innerHTML =
+            '<div class="node ' + s.status + '">' + num + '</div>' +
+            '<div class="content"><h4>' + s.title + '</h4><p>' + s.desc + '</p>' +
+            '<span class="status-badge ' + s.status + '">' + (s.status === 'completed' ? 'Completed' : s.status === 'in-progress' ? 'In Progress' : 'Upcoming') + '</span></div>';
+          container.appendChild(step);
+        });
+      }
+    })();
+
+    // === Chat logic ===
+    (function(){
+      var chatInput = document.getElementById('chatInput');
+      var sendBtn = document.getElementById('sendBtn');
+      var chatMessages = document.getElementById('chatMessages');
+      if (!chatInput || !sendBtn || !chatMessages) return;
+      var botResponses = [
+        "I found 12 job matches for your profile. Top match: Senior Frontend Engineer at TechCorp — 94% match score.",
+        "Your key skill gaps: Cloud Architecture (AWS/GCP), GraphQL, and TypeScript. Want me to suggest learning paths?",
+        "Based on your experience, a transition to AI/ML engineering would take roughly 6 months with focused upskilling.",
+        "The fastest-growing roles in your area: Data Engineer (+42%), AI Product Manager (+38%), DevSecOps (+35%).",
+        "Your resume scores in the top 15% for ATS compatibility. I can suggest optimizations to push it higher.",
+        "There's a new Senior Full Stack role at InnoVista that matches 97% of your skills. Apply?"
+      ];
+      function addMessage(text, isUser) {
+        var div = document.createElement('div');
+        div.className = 'msg ' + (isUser ? 'user' : 'bot');
+        div.textContent = text;
+        chatMessages.appendChild(div);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+      }
+      function updateSendBtn() {
+        sendBtn.disabled = chatInput.value.trim().length === 0;
+      }
+      function handleSend() {
+        var text = chatInput.value.trim();
+        if (!text) return;
+        addMessage(text, true);
+        chatInput.value = '';
+        updateSendBtn();
+        setTimeout(function(){
+          var resp = botResponses[Math.floor(Math.random() * botResponses.length)];
+          addMessage(resp, false);
+        }, 800 + Math.random() * 600);
+      }
+      chatInput.addEventListener('input', updateSendBtn);
+      sendBtn.addEventListener('click', handleSend);
+      chatInput.addEventListener('keydown', function(e){ if (e.key === 'Enter') handleSend(); });
+      updateSendBtn();
+    })();
+
+    // Force the jobs and roadmap reveal on their tabs
+    var origReveal = revealTabItems;
+    revealTabItems = function(idx) {
+      origReveal(idx);
+    };
+  </script>
+</body>
+</html>
