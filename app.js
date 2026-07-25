@@ -262,16 +262,18 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 });
 
-// Switch Tabs
-function switchTab(tabId) {
-  document.querySelectorAll('.bottom-tabs .tab').forEach(btn => btn.classList.remove('active'));
-  document.querySelectorAll('.tab-page').forEach(tab => tab.classList.remove('active'));
-
-  const targetNav = document.querySelector(`.bottom-tabs .tab[data-tab="${tabId}"]`);
-  if (targetNav) targetNav.classList.add('active');
-  const targetTab = document.querySelector(`.tab-page[data-tab="${tabId}"]`);
-  if (targetTab) targetTab.classList.add('active');
-}
+// Global Function Binds for Inline HTML Handlers
+window.sendMessage          = sendMessage;
+window.loadSampleProfile    = loadSampleProfile;
+window.saveResumeEdits      = saveResumeEdits;
+window.removeSkill          = removeSkill;
+window.addSkillPrompt       = addSkillPrompt;
+window.addExperiencePrompt  = addExperiencePrompt;
+window.resetCurrentProfile  = resetCurrentProfile;
+window.filterJobs           = filterJobs;
+window.applyJob             = applyJob;
+window.openCourse           = openCourse;
+window.downloadResumePDF    = downloadResumePDF;
 
 // Load Sample Candidates
 function loadSampleProfile(type) {

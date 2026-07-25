@@ -20,3 +20,5 @@ yarn-debug.log*
 *.artifact.json
 .DS_Store
 Thumbs.db
+
+.vercel
