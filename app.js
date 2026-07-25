@@ -451,8 +451,27 @@ async function callLiveGenerativeAI(chatHistory) {
     }
   }
 
-  // 2. TRY GEMINI API KEY (if key starts with AIza)
-  if (savedKey.startsWith("AIza")) {
+  // 2. TRY PUTER.AI KEYLESS CLOUD LLM ENGINE (Zero API Keys Required!)
+  if (window.puter && window.puter.ai) {
+    try {
+      const lastUserMsg = chatHistory[chatHistory.length - 1]?.content || "";
+      const fullPrompt = `${systemPrompt}\n\nUser Question: ${lastUserMsg}`;
+      const response = await Promise.race([
+        window.puter.ai.chat(fullPrompt, { model: "gpt-4o-mini" }),
+        new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), 5000))
+      ]);
+      const replyText = typeof response === "string" ? response : response?.text || response?.message?.content;
+      if (replyText) {
+        console.log("[SkillBridge AI] Responded using Puter.ai keyless Cloud LLM engine (gpt-4o-mini):", replyText);
+        return replyText;
+      }
+    } catch (err) {
+      console.log("[SkillBridge AI] Puter.ai fallback skipped:", err.message);
+    }
+  }
+
+  // 3. TRY GEMINI API KEY (if key starts with AIza)
+  if (savedKey && savedKey.startsWith("AIza")) {
     try {
       const lastMsg = chatHistory[chatHistory.length - 1]?.content || "";
       const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${savedKey}`, {
@@ -468,46 +487,6 @@ async function callLiveGenerativeAI(chatHistory) {
         if (text) return text;
       }
     } catch (_) {}
-  }
-
-  // 3. TRY OPENROUTER / GROQ FREE CLOUD MODELS
-  const isGroq = savedKey && savedKey.startsWith("gsk_");
-  const modelsToTry = isGroq ? ["llama-3.1-8b-instant"] : AUTO_FREE_MODELS;
-  const endpoint = isGroq ? "https://api.groq.com/openai/v1/chat/completions" : "https://openrouter.ai/api/v1/chat/completions";
-
-  for (const modelName of modelsToTry) {
-    try {
-      const headers = {
-        "Content-Type": "application/json",
-        "HTTP-Referer": window.location.origin,
-        "X-Title": "SkillBridge AI"
-      };
-      if (savedKey && !savedKey.startsWith("sk-eec")) {
-        headers["Authorization"] = `Bearer ${savedKey}`;
-      }
-
-      const res = await fetch(endpoint, {
-        method: "POST",
-        headers: headers,
-        signal: AbortSignal.timeout(2500),
-        body: JSON.stringify({
-          model: modelName,
-          messages: [{ role: "system", content: systemPrompt }, ...chatHistory.slice(-4)],
-          stream: false,
-          max_tokens: 250
-        })
-      });
-
-      if (res.ok) {
-        const text = await parseResponseContent(res);
-        if (text) {
-          console.log(`[SkillBridge AI] Responded using cloud model (${modelName}):`, text);
-          return text;
-        }
-      }
-    } catch (_) {
-      continue;
-    }
   }
 
   return null;
