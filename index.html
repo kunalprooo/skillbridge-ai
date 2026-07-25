@@ -518,9 +518,14 @@
     <div class="tab-page" data-tab="1" data-visited="false">
       <div class="ui-layer" style="display:flex;flex-direction:column;height:100%;">
         <div class="chat-container" style="flex:1;display:flex;flex-direction:column;">
-          <div class="chat-header">
-            <h2 class="reveal-item">AI Chat Assistant (2026)</h2>
-            <p class="reveal-item">Chat with AI to auto-generate & update your live ATS Resume & Job predictions</p>
+          <div class="chat-header" style="display:flex;justify-content:space-between;align-items:flex-start;">
+            <div>
+              <h2 class="reveal-item">AI Chat Assistant (2026)</h2>
+              <p class="reveal-item">Chat with AI to auto-generate & update your live ATS Resume & Job predictions</p>
+            </div>
+            <button onclick="configureApiKeyPrompt()" class="sample-chip reveal-item" style="background:rgba(99,102,241,0.15);border:1px solid rgba(99,102,241,0.3);color:#818cf8;font-size:11px;padding:4px 10px;cursor:pointer;margin:0;">
+              ⚙️ AI Settings
+            </button>
           </div>
 
           <div class="sample-chips reveal-item">
