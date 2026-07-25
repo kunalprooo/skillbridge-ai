@@ -2,8 +2,8 @@
 // SkillBridge AI — app.js (IBM SkillsBuild SDG 8 Project)
 // ============================================================
 
-const OMNIROUTE_BASE = window.OMNIROUTE_BASE || "http://localhost:20128/v1";
-const OMNIROUTE_KEY  = window.OMNIROUTE_KEY  || localStorage.getItem("OMNIROUTE_KEY") || "sk-eec8165def933095-94526e-c4c7d9ec";
+const OMNIROUTE_BASE = window.OMNIROUTE_BASE || localStorage.getItem("OMNIROUTE_BASE") || "http://localhost:20128/v1";
+const OMNIROUTE_KEY  = window.OMNIROUTE_KEY  || localStorage.getItem("OMNIROUTE_KEY") || "";
 
 let activeProfile = {
   name:       "Rahul Sharma",
