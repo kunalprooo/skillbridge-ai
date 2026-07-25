@@ -428,7 +428,7 @@ async function callLiveGenerativeAI(chatHistory) {
             "Content-Type": "application/json",
             "Authorization": `Bearer ${savedKey}`
           },
-          signal: AbortSignal.timeout(4000),
+          signal: AbortSignal.timeout(12000),
           body: JSON.stringify({
             model: m,
             messages: [{ role: "system", content: systemPrompt }, ...chatHistory.slice(-4)],
@@ -561,7 +561,11 @@ function processUserSkillInput(inputStr) {
 
   const lower = inputStr.toLowerCase();
 
-  // 1. Greeting
+  // 1. Greeting & Casual Chat
+  if (lower.includes("talk") || lower.includes("normal") || lower.includes("chat") || lower.includes("who are you") || lower.includes("how are you")) {
+    return `Absolutely <strong>${activeProfile.name}</strong>! 😊 We can talk naturally about anything — your software engineering projects, tech career goals in <strong>${activeProfile.city}</strong>, resume tips, or regional job openings. What's on your mind?`;
+  }
+
   const isGreetingOnly = /\b(?:hi|hello|hey|namaste)\b/i.test(inputStr) && inputStr.split(' ').length <= 3;
   if (isGreetingOnly) {
     return `Namaste <strong>${activeProfile.name}</strong>! 👋<br><br>I am your SkillBridge AI Assistant. Tell me your name, city, degree, or skills (e.g. <em>"I am Kunal from Delhi with a B.Tech degree"</em>) and I will generate your ATS resume and match you with regional jobs!`;
