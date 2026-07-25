@@ -1232,50 +1232,6 @@
       }
     })();
 
-    // === Chat logic ===
-    (function(){
-      var chatInput = document.getElementById('chatInput');
-      var sendBtn = document.getElementById('sendBtn');
-      var chatMessages = document.getElementById('chatMessages');
-      if (!chatInput || !sendBtn || !chatMessages) return;
-      var botResponses = [
-        "I found 12 job matches for your profile. Top match: Senior Frontend Engineer at TechCorp — 94% match score.",
-        "Your key skill gaps: Cloud Architecture (AWS/GCP), GraphQL, and TypeScript. Want me to suggest learning paths?",
-        "Based on your experience, a transition to AI/ML engineering would take roughly 6 months with focused upskilling.",
-        "The fastest-growing roles in your area: Data Engineer (+42%), AI Product Manager (+38%), DevSecOps (+35%).",
-        "Your resume scores in the top 15% for ATS compatibility. I can suggest optimizations to push it higher.",
-        "There's a new Senior Full Stack role at InnoVista that matches 97% of your skills. Apply?"
-      ];
-      function addMessage(text, isUser) {
-        var div = document.createElement('div');
-        div.className = 'msg ' + (isUser ? 'user' : 'bot');
-        div.textContent = text;
-        chatMessages.appendChild(div);
-        chatMessages.scrollTop = chatMessages.scrollHeight;
-      }
-      function updateSendBtn() {
-        sendBtn.disabled = chatInput.value.trim().length === 0;
-      }
-      function handleSend() {
-        var text = chatInput.value.trim();
-        if (!text) return;
-        addMessage(text, true);
-        chatInput.value = '';
-        updateSendBtn();
-        setTimeout(function(){
-          var resp = botResponses[Math.floor(Math.random() * botResponses.length)];
-          addMessage(resp, false);
-        }, 800 + Math.random() * 600);
-      }
-      chatInput.addEventListener('input', updateSendBtn);
-      sendBtn.addEventListener('click', handleSend);
-      chatInput.addEventListener('keydown', function(e){ if (e.key === 'Enter') handleSend(); });
-      updateSendBtn();
-    })();
-
-    // Force the jobs and roadmap reveal on their tabs
-    var origReveal = revealTabItems;
-    };
   </script>
   <script src="app.js"></script>
 </body>
