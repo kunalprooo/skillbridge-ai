@@ -358,6 +358,62 @@ async function callLiveGenerativeAI(chatHistory) {
 }
 
 // Send Message
+async function callLiveGenerativeAI(chatHistory) {
+  const savedKey = localStorage.getItem("SKILLBRIDGE_AI_KEY") || window.SKILLBRIDGE_AI_KEY || OMNIROUTE_KEY;
+  if (!savedKey) return null;
+
+  const systemPrompt = `You are SkillBridge AI, an intelligent, encouraging AI career coach and job assistant for Indian youth. Candidate Profile: Name: ${activeProfile.name}, City: ${activeProfile.city}, Role: ${activeProfile.title}, Skills: ${activeProfile.skills.join(", ") || "None yet"}. Respond in 2-3 sentences max in friendly, helpful English.`;
+
+  // 1. Try Google Gemini API
+  if (savedKey.startsWith("AIza")) {
+    try {
+      const lastMsg = chatHistory[chatHistory.length - 1]?.content || "";
+      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${savedKey}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        signal: AbortSignal.timeout(3500),
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: `${systemPrompt}\n\nUser Question: ${lastMsg}` }] }]
+        })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        return data.candidates?.[0]?.content?.parts?.[0]?.text || null;
+      }
+    } catch (_) {}
+  }
+
+  // 2. Try Groq / OpenRouter / Cloud API
+  const isGroq = savedKey.startsWith("gsk_");
+  const endpoint = isGroq ? "https://api.groq.com/openai/v1/chat/completions" : "https://openrouter.ai/api/v1/chat/completions";
+  const model = isGroq ? "llama-3.1-8b-instant" : "google/gemini-2.5-flash:free";
+
+  try {
+    const res = await fetch(endpoint, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${savedKey}`,
+        "HTTP-Referer": window.location.origin,
+        "X-Title": "SkillBridge AI"
+      },
+      signal: AbortSignal.timeout(3500),
+      body: JSON.stringify({
+        model: model,
+        messages: [{ role: "system", content: systemPrompt }, ...chatHistory.slice(-4)],
+        max_tokens: 250
+      })
+    });
+    if (res.ok) {
+      const data = await res.json();
+      return data.choices?.[0]?.message?.content || null;
+    }
+  } catch (_) {}
+
+  return null;
+}
+
+// Send Message
 async function sendMessage() {
   const input = document.getElementById("chatInput");
   if (!input) return;
@@ -382,9 +438,10 @@ async function sendMessage() {
 
   let aiReply = await callLiveGenerativeAI(chatHistory);
 
+  // Fallback to Localhost OmniRoute if running locally on port 20128
   if (!aiReply) {
     const isLocalHost = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
-    if (isLocalHost && window.OMNIROUTE_KEY) {
+    if (isLocalHost && OMNIROUTE_KEY) {
       const modelsToTry = ["antigravity/auto", "antigravity/default"];
       for (const modelName of modelsToTry) {
         try {
