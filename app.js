@@ -358,21 +358,53 @@ async function callLiveGenerativeAI(chatHistory) {
 }
 
 const AUTO_FREE_MODELS = [
+  "auto/best-chat",
+  "auto/chat",
+  "ddgw/gpt-4o-mini",
+  "agy/gemini-2.5-flash",
   "google/gemini-2.5-flash:free",
-  "meta-llama/llama-3.3-70b-instruct:free",
-  "mistralai/mistral-7b-instruct:free",
-  "qwen/qwen-2.5-7b-instruct:free",
-  "deepseek/deepseek-r1:free"
+  "meta-llama/llama-3.3-70b-instruct:free"
 ];
 
-// Send Message — Automatic Multi-Model Cascade Engine
+// Send Message — Dual OmniRoute Local + Cloud Multi-Model Engine
 async function callLiveGenerativeAI(chatHistory) {
   const savedKey = localStorage.getItem("SKILLBRIDGE_AI_KEY") || window.SKILLBRIDGE_AI_KEY || OMNIROUTE_KEY || "sk-eec8165def933095-bb990c-1e40de82";
   if (!savedKey) return null;
 
   const systemPrompt = `You are SkillBridge AI, an intelligent, encouraging AI career coach and job assistant for Indian youth. Candidate Profile: Name: ${activeProfile.name}, City: ${activeProfile.city}, Role: ${activeProfile.title}, Skills: ${activeProfile.skills.join(", ") || "None yet"}. Respond in 2-3 sentences max in friendly, helpful English.`;
 
-  // 1. If user provided a specific Gemini API Key (starts with AIza)
+  // 1. TRY LOCAL OMNIROUTE PORT 20128 FIRST (for sk-eec keys or localhost)
+  const isLocalHost = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
+  if (isLocalHost || savedKey.startsWith("sk-eec")) {
+    const localModels = ["auto/best-chat", "auto/chat", "ddgw/gpt-4o-mini", "agy/gemini-2.5-flash", "auto/fast"];
+    for (const m of localModels) {
+      try {
+        const res = await fetch("http://localhost:20128/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${savedKey}`
+          },
+          signal: AbortSignal.timeout(3000),
+          body: JSON.stringify({
+            model: m,
+            messages: [{ role: "system", content: systemPrompt }, ...chatHistory.slice(-4)],
+            max_tokens: 250
+          })
+        });
+        if (res.ok) {
+          const data = await res.json();
+          const text = data.choices?.[0]?.message?.content;
+          if (text) {
+            console.log(`[SkillBridge AI] Responded using local OmniRoute model: ${m}`);
+            return text;
+          }
+        }
+      } catch (_) {}
+    }
+  }
+
+  // 2. TRY GEMINI API KEY (if key starts with AIza)
   if (savedKey.startsWith("AIza")) {
     try {
       const lastMsg = chatHistory[chatHistory.length - 1]?.content || "";
@@ -392,7 +424,7 @@ async function callLiveGenerativeAI(chatHistory) {
     } catch (_) {}
   }
 
-  // 2. Automatic Cascade across free cloud models
+  // 3. TRY OPENROUTER / GROQ FREE CLOUD MODELS
   const isGroq = savedKey.startsWith("gsk_");
   const modelsToTry = isGroq ? ["llama-3.1-8b-instant"] : AUTO_FREE_MODELS;
   const endpoint = isGroq ? "https://api.groq.com/openai/v1/chat/completions" : "https://openrouter.ai/api/v1/chat/completions";
@@ -419,12 +451,11 @@ async function callLiveGenerativeAI(chatHistory) {
         const data = await res.json();
         const text = data.choices?.[0]?.message?.content;
         if (text) {
-          console.log(`[SkillBridge AI] Responded using model: ${modelName}`);
+          console.log(`[SkillBridge AI] Responded using cloud model: ${modelName}`);
           return text;
         }
       }
     } catch (_) {
-      // Cascade to next model if this one fails or times out
       continue;
     }
   }
