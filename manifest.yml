@@ -1,0 +1,7 @@
+---
+# IBM Cloud App Deployment Manifest
+applications:
+- name: skillbridge-ai
+  memory: 128M
+  instances: 1
+  buildpack: staticfile_buildpack
