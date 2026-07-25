@@ -451,26 +451,7 @@ async function callLiveGenerativeAI(chatHistory) {
     }
   }
 
-  // 2. TRY PUTER.AI KEYLESS CLOUD LLM ENGINE (Zero API Keys Required!)
-  if (window.puter && window.puter.ai) {
-    try {
-      const lastUserMsg = chatHistory[chatHistory.length - 1]?.content || "";
-      const fullPrompt = `${systemPrompt}\n\nUser Question: ${lastUserMsg}`;
-      const response = await Promise.race([
-        window.puter.ai.chat(fullPrompt, { model: "gpt-4o-mini" }),
-        new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), 5000))
-      ]);
-      const replyText = typeof response === "string" ? response : response?.text || response?.message?.content;
-      if (replyText) {
-        console.log("[SkillBridge AI] Responded using Puter.ai keyless Cloud LLM engine (gpt-4o-mini):", replyText);
-        return replyText;
-      }
-    } catch (err) {
-      console.log("[SkillBridge AI] Puter.ai fallback skipped:", err.message);
-    }
-  }
-
-  // 3. TRY GEMINI API KEY (if key starts with AIza)
+  // 2. TRY GEMINI API KEY (if key starts with AIza)
   if (savedKey && savedKey.startsWith("AIza")) {
     try {
       const lastMsg = chatHistory[chatHistory.length - 1]?.content || "";
@@ -482,6 +463,37 @@ async function callLiveGenerativeAI(chatHistory) {
           contents: [{ parts: [{ text: `${systemPrompt}\n\nUser Question: ${lastMsg}` }] }]
         })
       });
+      if (res.ok) {
+        const text = await parseResponseContent(res);
+        if (text) return text;
+      }
+    } catch (_) {}
+  }
+
+  // 3. TRY OPENROUTER / GROQ CLOUD MODELS (if valid key present)
+  if (savedKey && (savedKey.startsWith("gsk_") || savedKey.startsWith("sk-or-"))) {
+    const isGroq = savedKey.startsWith("gsk_");
+    const endpoint = isGroq ? "https://api.groq.com/openai/v1/chat/completions" : "https://openrouter.ai/api/v1/chat/completions";
+    const modelName = isGroq ? "llama-3.1-8b-instant" : "google/gemini-2.5-flash:free";
+
+    try {
+      const res = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${savedKey}`,
+          "HTTP-Referer": window.location.origin,
+          "X-Title": "SkillBridge AI"
+        },
+        signal: AbortSignal.timeout(2500),
+        body: JSON.stringify({
+          model: modelName,
+          messages: [{ role: "system", content: systemPrompt }, ...chatHistory.slice(-4)],
+          stream: false,
+          max_tokens: 250
+        })
+      });
+
       if (res.ok) {
         const text = await parseResponseContent(res);
         if (text) return text;
@@ -517,20 +529,6 @@ async function sendMessage() {
 
   let aiReply = await callLiveGenerativeAI(chatHistory);
 
-  // Fallback to Localhost OmniRoute if running locally on port 20128
-  if (!aiReply) {
-    const isLocalHost = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
-    if (isLocalHost && OMNIROUTE_KEY) {
-      const modelsToTry = ["antigravity/auto", "antigravity/default"];
-      for (const modelName of modelsToTry) {
-        try {
-          aiReply = await callOmniRoute(modelName, chatHistory, 800);
-          if (aiReply) break;
-        } catch (_) {}
-      }
-    }
-  }
-
   const reply = aiReply ?? processUserSkillInput(text);
   chatHistory.push({ role: "assistant", content: reply });
 
@@ -547,59 +545,78 @@ function processUserSkillInput(inputStr) {
   processUserSkillInputSilent(inputStr);
 
   const lower = inputStr.toLowerCase();
+  const name = activeProfile.name || "Rahul";
+  const city = activeProfile.city || "Jaipur";
+  const role = activeProfile.title || "Technician";
+  const skills = activeProfile.skills && activeProfile.skills.length > 0 ? activeProfile.skills.join(", ") : "technical skills";
 
-  // 1. Casual Chat & General Conversation
-  const isCasualChat = /(?:wassup|what happened|bro|dude|sup|hey|hello|hi|namaste|talk|chat|normal|who are you|how are you)/i.test(inputStr);
-  if (isCasualChat) {
-    return `Hey <strong>${activeProfile.name}</strong>! 👋 Everything is running smoothly. I'm here to help you explore jobs in <strong>${activeProfile.city}</strong>, answer interview questions, or update your ATS resume. What's on your mind?`;
+  // 1. Casual Chat & Greetings
+  if (/(?:wassup|sup|vrother|brother|bro|dude|what happened|how are you|who are you|hello|hi|namaste|hey)/i.test(inputStr)) {
+    const casualReplies = [
+      `Hey <strong>${name}</strong>! 👋 Everything is running smoothly. How can I assist you with your career or job search in <strong>${city}</strong> today?`,
+      `Namaste <strong>${name}</strong>! 😊 I'm doing great! I'm ready to help you optimize your resume, prepare for interviews, or check job openings in <strong>${city}</strong>.`,
+      `Hey <strong>${name}</strong>! 👋 I'm here and ready to help. What's on your mind regarding your <strong>${role}</strong> career path?`
+    ];
+    return casualReplies[Math.floor(Math.random() * casualReplies.length)];
   }
 
-  // 2. Interview / Preparation Advice
+  // 2. Advice & Guidance Questions
+  if (/(?:advice|suggest|tips|help|what should i do|guide|career|some thing)/i.test(inputStr)) {
+    return `
+      💡 <strong>Career Guidance for ${name} (${role} in ${city}):</strong><br><br>
+      1️⃣ <strong>Skill Building:</strong> Focus on mastering core competencies in <code>${skills}</code>.<br>
+      2️⃣ <strong>ATS Resume Verification:</strong> Go to the <strong>Resume</strong> tab to review and download your verified PDF.<br>
+      3️⃣ <strong>Local MSME Hiring:</strong> Employers in ${city} prioritize hands-on problem solving and practical experience.<br>
+      👉 Ask me specific questions like <em>"What is the salary for an electrician in Jaipur?"</em> or <em>"Give me interview tips"</em>!
+    `;
+  }
+
+  // 3. Interview / Preparation Advice
   if (lower.includes("interview") || lower.includes("prepare") || lower.includes("question")) {
     return `
-      💡 <strong>Interview Preparation Tips for ${activeProfile.title}:</strong><br><br>
-      1️⃣ <strong>Technical Core:</strong> Be prepared to explain hands-on projects using ${activeProfile.skills.slice(0, 3).join(", ") || "your technical skills"}.<br>
-      2️⃣ <strong>Local MSME Focus:</strong> Employers in <strong>${activeProfile.city}</strong> value practical problem-solving, safety compliance, and team coordination.<br>
+      💡 <strong>Interview Preparation Tips for ${role}:</strong><br><br>
+      1️⃣ <strong>Technical Core:</strong> Be prepared to explain hands-on projects using ${skills}.<br>
+      2️⃣ <strong>Local MSME Focus:</strong> Employers in <strong>${city}</strong> value practical problem-solving and safety compliance.<br>
       3️⃣ <strong>ATS Resume:</strong> Download your verified SkillBridge ATS PDF from the <strong>Resume</strong> tab and bring 2 printed copies!
     `;
   }
 
-  // 3. Salary / Compensation Guidance
+  // 4. Salary / Compensation Guidance
   if (lower.includes("salary") || lower.includes("pay") || lower.includes("package") || lower.includes("earning")) {
     return `
-      💰 <strong>Regional Salary Insights for ${activeProfile.city}:</strong><br><br>
-      • <strong>${activeProfile.title}:</strong> ₹25,000 – ₹45,000 / month (depending on experience & technical trade certifications).<br>
-      • Top hiring sectors in ${activeProfile.city}: <strong>${activeProfile.sector} & Tech Enterprises</strong>.<br>
+      💰 <strong>Regional Salary Insights for ${city}:</strong><br><br>
+      • <strong>${role}:</strong> ₹25,000 – ₹45,000 / month (depending on experience & trade certifications).<br>
+      • Top hiring sectors in ${city}: <strong>${activeProfile.sector} & Tech Enterprises</strong>.<br>
       👉 Check the <strong>Jobs</strong> tab to view live salary ranges for active openings!
     `;
   }
 
-  // 4. Course / Micro-Roadmap Guidance
+  // 5. Course / Micro-Roadmap Guidance
   if (lower.includes("course") || lower.includes("roadmap") || lower.includes("learn") || lower.includes("study")) {
     return `
-      📚 <strong>Recommended Micro-Roadmap for ${activeProfile.name}:</strong><br><br>
+      📚 <strong>Recommended Micro-Roadmap for ${name}:</strong><br><br>
       • <strong>Week 1:</strong> Core Skill Certification on IBM SkillsBuild Portal.<br>
       • <strong>Week 2:</strong> Practical Workplace Safety & Digital Operations.<br><br>
       👉 Click the <strong>Roadmap</strong> tab at the bottom to start your free 2-week learning modules!
     `;
   }
 
-  // 5. Profile Update Response (Only when user explicitly provides name/city/skills/degree)
+  // 6. Profile Update Response (Only when user explicitly provides name/city/skills/degree)
   const isProfileUpdate = /(?:my name|i am|i'm|from|living|based|degree|b\.tech|btech|b\.sc|bsc|bca|diploma|iti|python|react|javascript|html|css|sql|java|c\+\+|electrician|retail|warehouse|logistic|wiring|solar)/i.test(inputStr);
   if (isProfileUpdate) {
     return `
-      Great to meet you, <strong>${activeProfile.name}</strong>! I've updated your ATS Resume & Job Predictions. ✅<br><br>
-      👤 <strong>Name:</strong> ${activeProfile.name}<br>
+      Great to meet you, <strong>${name}</strong>! I've updated your ATS Resume & Job Predictions. ✅<br><br>
+      👤 <strong>Name:</strong> ${name}<br>
       📍 <strong>Location:</strong> ${activeProfile.location}<br>
       🎓 <strong>Education:</strong> ${activeProfile.education}<br>
-      💼 <strong>Target Role:</strong> ${activeProfile.title}<br>
+      💼 <strong>Target Role:</strong> ${role}<br>
       🛠️ <strong>Your Skills:</strong> ${activeProfile.skills.length > 0 ? activeProfile.skills.map(s => `<code>${s}</code>`).join(" ") : "<em>None added yet.</em>"}<br><br>
-      👉 Click the <strong>Resume</strong> tab to view/download your PDF, or <strong>Jobs</strong> to see live active positions in ${activeProfile.city}!
+      👉 Click the <strong>Resume</strong> tab to view/download your PDF, or <strong>Jobs</strong> to see live active positions in ${city}!
     `;
   }
 
-  // General Fallback
-  return `I'm listening, <strong>${activeProfile.name}</strong>! 😊 You can tell me your skills, ask about jobs in <strong>${activeProfile.city}</strong>, or request interview prep tips.`;
+  // General Fallback Response
+  return `I hear you, <strong>${name}</strong>! 😊 As your SkillBridge AI assistant, I can help you find job openings in <strong>${city}</strong>, practice interview questions, or update your ATS resume. What would you like to explore next?`;
 }
 
 function processUserSkillInputSilent(inputStr) {
