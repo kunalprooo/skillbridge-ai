@@ -428,7 +428,7 @@ async function callLiveGenerativeAI(chatHistory) {
             "Content-Type": "application/json",
             "Authorization": `Bearer ${savedKey}`
           },
-          signal: AbortSignal.timeout(12000),
+          signal: AbortSignal.timeout(1500),
           body: JSON.stringify({
             model: m,
             messages: [{ role: "system", content: systemPrompt }, ...chatHistory.slice(-4)],
@@ -443,7 +443,11 @@ async function callLiveGenerativeAI(chatHistory) {
             return text;
           }
         }
-      } catch (_) {}
+      } catch (err) {
+        // If server offline or connection refused, break loop instantly instead of retrying 5 models
+        console.log(`[SkillBridge AI] OmniRoute port 20128 offline or skipped: ${err.message}`);
+        break;
+      }
     }
   }
 
