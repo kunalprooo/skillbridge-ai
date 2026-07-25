@@ -191,6 +191,48 @@
     }
     .btn-secondary:hover { border-color: var(--accent); }
 
+    /* === AI SETTINGS MODAL === */
+    .modal-overlay {
+      display: none; position: fixed; inset: 0; z-index: 10000;
+      align-items: center; justify-content: center;
+      background: rgba(9,13,22,0.8); backdrop-filter: blur(10px);
+      padding: 16px;
+    }
+    .modal-overlay.active { display: flex; }
+    .modal-card {
+      width: 100%; max-width: 420px;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 16px; overflow: hidden;
+      box-shadow: 0 25px 50px rgba(0,0,0,0.5);
+      backdrop-filter: blur(16px);
+      animation: msgIn 0.25s ease-out;
+    }
+    .modal-header {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 16px 20px; border-bottom: 1px solid var(--border);
+    }
+    .modal-header h3 { font-family: var(--font-display); font-size: 16px; color: var(--fg); }
+    .modal-header .close-btn {
+      background: transparent; border: none; color: var(--muted);
+      font-size: 22px; line-height: 1; cursor: pointer; padding: 0 4px;
+    }
+    .modal-header .close-btn:hover { color: var(--fg); }
+    .modal-body { padding: 20px; display: flex; flex-direction: column; gap: 14px; }
+    .modal-body p { font-size: 13px; color: var(--muted); line-height: 1.5; }
+    .modal-body .form-group { display: flex; flex-direction: column; gap: 6px; }
+    .modal-body .form-group label { font-size: 12px; font-weight: 600; color: var(--fg); }
+    .modal-body .form-group input {
+      background: rgba(9,13,22,0.6); border: 1px solid var(--border);
+      color: var(--fg); padding: 10px 12px; border-radius: 10px;
+      font-size: 13px; outline: none; font-family: var(--font-body);
+    }
+    .modal-body .form-group input:focus { border-color: var(--accent); }
+    .modal-footer {
+      display: flex; justify-content: flex-end; gap: 10px;
+      padding: 14px 20px; background: rgba(9,13,22,0.4); border-top: 1px solid var(--border);
+    }
+    .modal-footer .btn-primary, .modal-footer .btn-secondary { padding: 10px 20px; font-size: 13px; }
+
     /* === VOICE TAB === */
     .chat-container {
       display: flex; flex-direction: column;
@@ -523,7 +565,7 @@
               <h2 class="reveal-item">AI Chat Assistant (2026)</h2>
               <p class="reveal-item">Chat with AI to auto-generate & update your live ATS Resume & Job predictions</p>
             </div>
-            <button class="sample-chip reveal-item" onclick="configureApiKeyPrompt()" style="background:rgba(99,102,241,0.15);border:1px solid rgba(99,102,241,0.3);color:#818cf8;font-size:11px;padding:4px 10px;cursor:pointer;margin:0;">
+            <button class="sample-chip reveal-item" onclick="openApiKeySettingsModal()" style="background:rgba(99,102,241,0.15);border:1px solid rgba(99,102,241,0.3);color:#818cf8;font-size:11px;padding:4px 10px;cursor:pointer;margin:0;">
               ⚙️ AI Settings
             </button>
           </div>
@@ -680,6 +722,34 @@
       <span>Roadmap</span>
     </button>
   </nav>
+
+  <div class="modal-overlay" id="apiKeySettingsModal" role="dialog" aria-modal="true" aria-labelledby="apiKeyModalTitle" onclick="if(event.target === this) closeApiKeySettingsModal()">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 id="apiKeyModalTitle">⚙️ AI Settings</h3>
+        <button class="close-btn" onclick="closeApiKeySettingsModal()" aria-label="Close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p>
+          Add a free <strong>Gemini API key</strong> to enable live AI chat replies, called directly from your browser.
+          Groq and OpenAI keys also work — just paste any of them below.
+        </p>
+        <div class="form-group">
+          <label for="geminiKeyInput">Gemini / Groq / OpenAI API Key</label>
+          <input type="password" id="geminiKeyInput" placeholder="AIza... / gsk_... / sk-..." autocomplete="off" spellcheck="false" onkeypress="if(event.key==='Enter') saveApiKeySettings()" />
+        </div>
+        <p style="font-size:12px;margin-top:-0.75rem;">
+          👉 Get a free Gemini key at
+          <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener" style="color:var(--accent);">aistudio.google.com/apikey</a>
+        </p>
+        <p id="apiKeyStatusText" style="font-size:12px;font-weight:600;"></p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" onclick="clearApiKeySettings()">Clear Key</button>
+        <button class="btn-primary" onclick="saveApiKeySettings()" style="padding:0.6rem 1.2rem;">Save & Connect</button>
+      </div>
+    </div>
+  </div>
 
   <script type="importmap">
   {
@@ -1021,6 +1091,7 @@
   </script>
 
   <!-- SkillBridge AI Core App Script (v2026 Cache Busted) -->
-  <script src="app.js?v=20260725_v99"></script>
+  <script src="config.js?v=20260725_v100"></script>
+  <script src="app.js?v=20260725_v100"></script>
 </body>
 </html>

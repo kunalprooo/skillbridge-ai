@@ -2,9 +2,6 @@
 // SkillBridge AI — app.js (IBM SkillsBuild SDG 8 Project)
 // ============================================================
 
-const OMNIROUTE_BASE = window.OMNIROUTE_BASE || localStorage.getItem("OMNIROUTE_BASE") || "http://localhost:20128/v1";
-const OMNIROUTE_KEY  = window.OMNIROUTE_KEY  || localStorage.getItem("OMNIROUTE_KEY") || "";
-
 let activeProfile = {
   name:       "Rahul Sharma",
   title:      "Certified Electrician & Solar Installation Technician",
@@ -255,7 +252,6 @@ document.addEventListener("DOMContentLoaded", () => {
   renderResume(activeProfile);
   renderJobs();
   renderRoadmap(activeProfile.sector);
-  checkApiStatus();
 
   const sendBtn = document.getElementById("sendBtn");
   if (sendBtn) {
@@ -313,19 +309,64 @@ function loadSampleProfile(type) {
   showToast(`Loaded candidate profile: ${profile.name} (${profile.city}) ✅`);
 }
 
-function configureApiKeyPrompt() {
-  const currentKey = localStorage.getItem("SKILLBRIDGE_AI_KEY") || "";
-  const newKey = prompt("Enter your Gemini / Groq / OpenAI API Key (Leave blank to use built-in Smart AI Engine):", currentKey);
-  if (newKey !== null) {
-    localStorage.setItem("SKILLBRIDGE_AI_KEY", newKey.trim());
-    if (newKey.trim()) {
-      showToast("🟢 Custom Generative AI API Key saved!");
-    } else {
-      showToast("ℹ️ Switched to Built-in Smart AI Engine.");
-    }
+function describeApiKeyStatus(key) {
+  if (!key) return { text: "ℹ️ No key set — using the built-in offline Smart AI Engine.", color: "#94a3b8" };
+  if (key.startsWith("AIza")) return { text: "🟢 Gemini API Key active.", color: "#10b981" };
+  if (key.startsWith("gsk_")) return { text: "🟢 Groq API Key active.", color: "#10b981" };
+  return { text: "🟢 OpenAI API Key active.", color: "#10b981" };
+}
+
+function refreshApiKeyStatusText() {
+  const status = describeApiKeyStatus(localStorage.getItem("SKILLBRIDGE_AI_KEY") || "");
+  const el = document.getElementById("apiKeyStatusText");
+  if (el) {
+    el.textContent = status.text;
+    el.style.color = status.color;
   }
 }
-window.configureApiKeyPrompt = configureApiKeyPrompt;
+
+let apiKeyModalTriggerEl = null;
+
+function openApiKeySettingsModal() {
+  const input = document.getElementById("geminiKeyInput");
+  if (input) input.value = localStorage.getItem("SKILLBRIDGE_AI_KEY") || "";
+  refreshApiKeyStatusText();
+  apiKeyModalTriggerEl = document.activeElement;
+  document.getElementById("apiKeySettingsModal")?.classList.add("active");
+  input?.focus();
+  document.addEventListener("keydown", handleApiKeyModalKeydown);
+}
+
+function closeApiKeySettingsModal() {
+  document.getElementById("apiKeySettingsModal")?.classList.remove("active");
+  document.removeEventListener("keydown", handleApiKeyModalKeydown);
+  apiKeyModalTriggerEl?.focus();
+}
+
+function handleApiKeyModalKeydown(e) {
+  if (e.key === "Escape") closeApiKeySettingsModal();
+}
+
+function saveApiKeySettings() {
+  const input = document.getElementById("geminiKeyInput");
+  const key = (input?.value || "").trim();
+  localStorage.setItem("SKILLBRIDGE_AI_KEY", key);
+  refreshApiKeyStatusText();
+  if (key) {
+    showToast("🟢 Custom Generative AI API Key saved!");
+  } else {
+    showToast("ℹ️ Switched to Built-in Smart AI Engine.");
+  }
+  closeApiKeySettingsModal();
+}
+
+function clearApiKeySettings() {
+  localStorage.removeItem("SKILLBRIDGE_AI_KEY");
+  const input = document.getElementById("geminiKeyInput");
+  if (input) input.value = "";
+  refreshApiKeyStatusText();
+  showToast("ℹ️ API Key cleared — using Built-in Smart AI Engine.");
+}
 
 async function callLiveGenerativeAI(chatHistory) {
   const savedKey = localStorage.getItem("SKILLBRIDGE_AI_KEY") || window.SKILLBRIDGE_AI_KEY;
@@ -377,133 +418,6 @@ async function callLiveGenerativeAI(chatHistory) {
   return null;
 }
 
-const AUTO_FREE_MODELS = [
-  "auto/best-chat",
-  "auto/chat",
-  "ddgw/gpt-4o-mini",
-  "agy/gemini-2.5-flash",
-  "google/gemini-2.5-flash:free",
-  "meta-llama/llama-3.3-70b-instruct:free"
-];
-
-async function parseResponseContent(res) {
-  const rawText = await res.text();
-  try {
-    const json = JSON.parse(rawText);
-    if (json.choices?.[0]?.message?.content) return json.choices[0].message.content;
-    if (json.candidates?.[0]?.content?.parts?.[0]?.text) return json.candidates[0].content.parts[0].text;
-  } catch (_) {
-    const lines = rawText.split('\n');
-    let fullContent = "";
-    for (const line of lines) {
-      if (line.startsWith('data: ') && !line.includes('[DONE]')) {
-        try {
-          const chunk = JSON.parse(line.slice(6));
-          const delta = chunk.choices?.[0]?.delta?.content || chunk.choices?.[0]?.message?.content || "";
-          fullContent += delta;
-        } catch (_) {}
-      }
-    }
-    if (fullContent.trim()) return fullContent.trim();
-  }
-  return null;
-}
-
-// Send Message — Dual OmniRoute Local + Cloud Multi-Model Engine
-async function callLiveGenerativeAI(chatHistory) {
-  const savedKey = localStorage.getItem("SKILLBRIDGE_AI_KEY") || window.SKILLBRIDGE_AI_KEY || OMNIROUTE_KEY || "sk-eec8165def933095-bb990c-1e40de82";
-  if (!savedKey) return null;
-
-  const systemPrompt = `You are SkillBridge AI, an intelligent, encouraging AI career coach and job assistant for Indian youth. Candidate Profile: Name: ${activeProfile.name}, City: ${activeProfile.city}, Role: ${activeProfile.title}, Skills: ${activeProfile.skills.join(", ") || "None yet"}. Respond in 2-3 sentences max in friendly, helpful English.`;
-
-  // 1. TRY LOCAL OMNIROUTE PORT 20128 FIRST (for sk-eec keys or localhost)
-  const isLocalHost = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
-  if (isLocalHost || savedKey.startsWith("sk-eec")) {
-    const localModels = ["auto/best-chat", "auto/chat", "ddgw/gpt-4o-mini", "agy/gemini-2.5-flash", "auto/fast"];
-    for (const m of localModels) {
-      try {
-        const res = await fetch("http://localhost:20128/v1/chat/completions", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${savedKey}`
-          },
-          signal: AbortSignal.timeout(1500),
-          body: JSON.stringify({
-            model: m,
-            messages: [{ role: "system", content: systemPrompt }, ...chatHistory.slice(-4)],
-            stream: false,
-            max_tokens: 250
-          })
-        });
-        if (res.ok) {
-          const text = await parseResponseContent(res);
-          if (text) {
-            console.log(`[SkillBridge AI] Responded using local OmniRoute model (${m}):`, text);
-            return text;
-          }
-        }
-      } catch (err) {
-        // If server offline or connection refused, break loop instantly instead of retrying 5 models
-        console.log(`[SkillBridge AI] OmniRoute port 20128 offline or skipped: ${err.message}`);
-        break;
-      }
-    }
-  }
-
-  // 2. TRY GEMINI API KEY (if key starts with AIza)
-  if (savedKey && savedKey.startsWith("AIza")) {
-    try {
-      const lastMsg = chatHistory[chatHistory.length - 1]?.content || "";
-      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${savedKey}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        signal: AbortSignal.timeout(3500),
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: `${systemPrompt}\n\nUser Question: ${lastMsg}` }] }]
-        })
-      });
-      if (res.ok) {
-        const text = await parseResponseContent(res);
-        if (text) return text;
-      }
-    } catch (_) {}
-  }
-
-  // 3. TRY OPENROUTER / GROQ CLOUD MODELS (if valid key present)
-  if (savedKey && (savedKey.startsWith("gsk_") || savedKey.startsWith("sk-or-"))) {
-    const isGroq = savedKey.startsWith("gsk_");
-    const endpoint = isGroq ? "https://api.groq.com/openai/v1/chat/completions" : "https://openrouter.ai/api/v1/chat/completions";
-    const modelName = isGroq ? "llama-3.1-8b-instant" : "google/gemini-2.5-flash:free";
-
-    try {
-      const res = await fetch(endpoint, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${savedKey}`,
-          "HTTP-Referer": window.location.origin,
-          "X-Title": "SkillBridge AI"
-        },
-        signal: AbortSignal.timeout(2500),
-        body: JSON.stringify({
-          model: modelName,
-          messages: [{ role: "system", content: systemPrompt }, ...chatHistory.slice(-4)],
-          stream: false,
-          max_tokens: 250
-        })
-      });
-
-      if (res.ok) {
-        const text = await parseResponseContent(res);
-        if (text) return text;
-      }
-    } catch (_) {}
-  }
-
-  return null;
-}
-
 // Send Message
 async function sendMessage() {
   const input = document.getElementById("chatInput");
@@ -527,9 +441,8 @@ async function sendMessage() {
   `;
   chatContainer.scrollTop = chatContainer.scrollHeight;
 
-  let aiReply = await callLiveGenerativeAI(chatHistory);
-
-  const reply = aiReply ?? processUserSkillInput(text);
+  const aiReply = await callLiveGenerativeAI(chatHistory);
+  const reply = aiReply ? escapeHtml(aiReply).replace(/\n/g, "<br>") : processUserSkillInput(text);
   chatHistory.push({ role: "assistant", content: reply });
 
   const loadingEl = document.getElementById(loadingId);
@@ -548,7 +461,7 @@ function processUserSkillInput(inputStr) {
   const name = activeProfile.name || "Rahul";
   const city = activeProfile.city || "Jaipur";
   const role = activeProfile.title || "Technician";
-  const skills = activeProfile.skills && activeProfile.skills.length > 0 ? activeProfile.skills.join(", ") : "technical skills";
+  const skills = activeProfile.skills && activeProfile.skills.length > 0 ? escapeHtml(activeProfile.skills.join(", ")) : "technical skills";
 
   // 1. Casual Chat & Greetings
   if (/(?:wassup|sup|vrother|brother|bro|dude|what happened|how are you|who are you|hello|hi|namaste|hey)/i.test(inputStr)) {
@@ -607,10 +520,10 @@ function processUserSkillInput(inputStr) {
     return `
       Great to meet you, <strong>${name}</strong>! I've updated your ATS Resume & Job Predictions. ✅<br><br>
       👤 <strong>Name:</strong> ${name}<br>
-      📍 <strong>Location:</strong> ${activeProfile.location}<br>
-      🎓 <strong>Education:</strong> ${activeProfile.education}<br>
+      📍 <strong>Location:</strong> ${escapeHtml(activeProfile.location)}<br>
+      🎓 <strong>Education:</strong> ${escapeHtml(activeProfile.education)}<br>
       💼 <strong>Target Role:</strong> ${role}<br>
-      🛠️ <strong>Your Skills:</strong> ${activeProfile.skills.length > 0 ? activeProfile.skills.map(s => `<code>${s}</code>`).join(" ") : "<em>None added yet.</em>"}<br><br>
+      🛠️ <strong>Your Skills:</strong> ${activeProfile.skills.length > 0 ? activeProfile.skills.map(s => `<code>${escapeHtml(s)}</code>`).join(" ") : "<em>None added yet.</em>"}<br><br>
       👉 Click the <strong>Resume</strong> tab to view/download your PDF, or <strong>Jobs</strong> to see live active positions in ${city}!
     `;
   }
@@ -738,10 +651,6 @@ function processUserSkillInputSilent(inputStr) {
   }
 }
 
-function handleKeyPress(e) {
-  if (e.key === "Enter") sendMessage();
-}
-
 // ================= ============================================
 // RESUME INLINE EDITOR & AUTO-SYNC ENGINE
 // ============================================================
@@ -761,7 +670,7 @@ function renderResume(profile) {
       g("resSkills").innerHTML = profile.skills
         .map((s, i) => `
           <span class="skill-chip blue">
-            ${s}
+            ${escapeHtml(s)}
             <span class="remove-skill-btn" onclick="removeSkill(${i})" title="Remove skill">&times;</span>
           </span>
         `).join("");
@@ -771,15 +680,15 @@ function renderResume(profile) {
   if (g("resExperience")) {
     g("resExperience").innerHTML = profile.experience.map((exp) => `
       <div class="exp-item" style="margin-bottom: 14px;">
-        <h4 class="editable-field" contenteditable="true" onblur="saveResumeEdits()" style="font-size:14px;font-weight:600;color:#0f172a;">${exp.role} — ${exp.company}</h4>
-        <div class="meta editable-field" contenteditable="true" onblur="saveResumeEdits()" style="font-size:12px;color:#64748b;">${exp.period}</div>
-        <p class="editable-field" contenteditable="true" onblur="saveResumeEdits()" style="font-size:13px;color:#334155;line-height:1.5;">${exp.details.join(" ")}</p>
+        <h4 class="editable-field" contenteditable="true" onblur="saveResumeEdits()" style="font-size:14px;font-weight:600;color:#0f172a;">${escapeHtml(exp.role)} — ${escapeHtml(exp.company)}</h4>
+        <div class="meta editable-field" contenteditable="true" onblur="saveResumeEdits()" style="font-size:12px;color:#64748b;">${escapeHtml(exp.period)}</div>
+        <p class="editable-field" contenteditable="true" onblur="saveResumeEdits()" style="font-size:13px;color:#334155;line-height:1.5;">${exp.details.map(escapeHtml).join(" ")}</p>
       </div>
     `).join("");
   }
 
   if (g("resEducation")) {
-    g("resEducation").innerHTML = profile.education;
+    g("resEducation").innerHTML = escapeHtml(profile.education);
   }
 }
 
@@ -810,7 +719,7 @@ function addSkillPrompt() {
     activeProfile.skills.push(newSkill.trim());
     renderResume(activeProfile);
     renderJobs();
-    showToast(`Added skill: "${newSkill.trim()}" ✅`);
+    showToast(`Added skill: "${escapeHtml(newSkill.trim())}" ✅`);
   }
 }
 
@@ -995,68 +904,6 @@ function downloadResumePDF() {
   showToast("📄 Generating custom ATS PDF… download starting!");
   html2pdf().set(opt).from(clone).save();
 }
-
-function checkApiStatus() {
-  fetch(`${OMNIROUTE_BASE}/models`, {
-    headers: { "Authorization": `Bearer ${OMNIROUTE_KEY}` },
-    signal: AbortSignal.timeout(1200)
-  }).then(res => {
-    if (res.ok) showToast("🟢 OmniRoute + Antigravity CLI AI Engine Connected!");
-  }).catch(() => {});
-}
-
-async function callOmniRoute(model, messages, timeoutMs = 1500) {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
-
-  const systemPrompt = {
-    role: "system",
-    content: `You are SkillBridge AI, an encouraging career assistant for Indian youth. Give helpful, concise (2-3 sentences) responses. Candidate Name: ${activeProfile.name}, City: ${activeProfile.city}, Education: ${activeProfile.education}. Ask candidate what skills or tech stack they have if not provided yet.`
-  };
-
-  try {
-    const res = await fetch(`${OMNIROUTE_BASE}/chat/completions`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${OMNIROUTE_KEY}`
-      },
-      signal: controller.signal,
-      body: JSON.stringify({
-        model: model,
-        messages: [systemPrompt, ...messages.slice(-4)],
-        temperature: 0.7,
-        max_tokens: 250
-      })
-    });
-    clearTimeout(timer);
-    if (!res.ok) return null;
-    const data = await res.json();
-    return data.choices?.[0]?.message?.content || null;
-  } catch (err) {
-    clearTimeout(timer);
-    return null;
-  }
-}
-
-function configureApiKeyPrompt() {
-  const currentKey = localStorage.getItem("SKILLBRIDGE_AI_KEY") || OMNIROUTE_KEY || "";
-  const key = prompt("⚙️ Configure your Generative AI Key:\n\nPaste your API Key (Gemini starts with AIza..., Groq starts with gsk_..., OpenRouter starts with sk-or-..., or OmniRoute sk-eec...):", currentKey);
-  
-  if (key !== null) {
-    const cleanKey = key.trim();
-    if (cleanKey) {
-      localStorage.setItem("SKILLBRIDGE_AI_KEY", cleanKey);
-      window.SKILLBRIDGE_AI_KEY = cleanKey;
-      showToast("🟢 Custom AI API Key saved! AI Chat will now use your key.");
-    } else {
-      localStorage.removeItem("SKILLBRIDGE_AI_KEY");
-      window.SKILLBRIDGE_AI_KEY = "";
-      showToast("ℹ️ Custom API key cleared.");
-    }
-  }
-}
-window.configureApiKeyPrompt = configureApiKeyPrompt;
 
 function showToast(message, type = "info") {
   document.querySelectorAll(".toast-notification").forEach(t => t.remove());

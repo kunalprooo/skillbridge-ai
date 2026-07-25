@@ -17,7 +17,7 @@ SkillBridge AI is a state-of-the-art WebGL 3D career guidance application design
 
 ### 2. 💬 AI Chat Assistant (2026)
 - **Smart Natural Language Extraction:** Parses name, location, degree (e.g. *B.Tech, B.Sc, BCA, Diploma, ITI*), and technical skills automatically from chat input.
-- **Model Fallback Cascade:** Cascades through Antigravity CLI & OmniRoute model endpoints (`antigravity/auto`, `antigravity/default`, `agy/default`, `antigravity/claude-3-5-sonnet`) with a fast 1.5s internal fallback engine.
+- **Optional Live Generative AI:** Click **⚙️ AI Settings** to add a free [Gemini API key](https://aistudio.google.com/apikey) (Groq and OpenAI keys also work) for live model replies, called directly from your browser. No key required — the app works fully offline with a built-in rule-based Smart AI Engine that instantly falls back if no key is set or a request fails.
 - **Visual Resume Highlight:** Triggers a 3D glow effect on the ATS Resume paper whenever the AI updates your candidate details.
 
 ### 3. 📄 Interactive ATS Resume Editor & PDF Exporter
@@ -62,6 +62,25 @@ npx serve .
 
 ### Method 3: Direct File Opening
 You can double-click **`index.html`** to open directly in Google Chrome, Microsoft Edge, or Firefox.
+
+---
+
+## 🚀 Deploying (Vercel)
+
+This is a static site — `vercel.json` runs `scripts/generate-config.js` at
+build time and serves the repo root as-is. No framework build step required.
+
+- **Per-visitor AI key (recommended, safest):** leave everything unset.
+  Visitors click **⚙️ AI Settings** in the AI Chat tab and paste their own
+  free [Gemini API key](https://aistudio.google.com/apikey). It's stored only
+  in their browser's `localStorage`.
+- **Site-wide default AI key (optional):** set `GEMINI_API_KEY` in your
+  Vercel project's **Settings → Environment Variables**. See
+  [`.env.example`](.env.example) for the security tradeoff — this is a
+  client-only app with no backend, so any key set this way is publicly
+  visible in the deployed `config.js`. Only do this with a free-tier key you
+  don't mind being visible, ideally with HTTP referrer restrictions set in
+  Google AI Studio.
 
 ---
 
