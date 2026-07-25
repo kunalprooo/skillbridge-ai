@@ -1,7 +1,5 @@
 # 🚀 SkillBridge AI — 3D WebGL Career Platform & ATS Resume Builder (2026)
 
-> **IBM SkillsBuild SDG 8 Project** — *Decent Work and Economic Growth*
-
 SkillBridge AI is a state-of-the-art WebGL 3D career guidance application designed for Indian youth and regional MSME job seekers. It features an interactive AI Chat Assistant, real-time ATS Resume Generator with live inline editing, 1-click ATS PDF Export, live verified job postings with skill match percentages, and a 2-Week Micro-Roadmap.
 
 ---
