@@ -386,6 +386,29 @@ const AUTO_FREE_MODELS = [
   "meta-llama/llama-3.3-70b-instruct:free"
 ];
 
+async function parseResponseContent(res) {
+  const rawText = await res.text();
+  try {
+    const json = JSON.parse(rawText);
+    if (json.choices?.[0]?.message?.content) return json.choices[0].message.content;
+    if (json.candidates?.[0]?.content?.parts?.[0]?.text) return json.candidates[0].content.parts[0].text;
+  } catch (_) {
+    const lines = rawText.split('\n');
+    let fullContent = "";
+    for (const line of lines) {
+      if (line.startsWith('data: ') && !line.includes('[DONE]')) {
+        try {
+          const chunk = JSON.parse(line.slice(6));
+          const delta = chunk.choices?.[0]?.delta?.content || chunk.choices?.[0]?.message?.content || "";
+          fullContent += delta;
+        } catch (_) {}
+      }
+    }
+    if (fullContent.trim()) return fullContent.trim();
+  }
+  return null;
+}
+
 // Send Message — Dual OmniRoute Local + Cloud Multi-Model Engine
 async function callLiveGenerativeAI(chatHistory) {
   const savedKey = localStorage.getItem("SKILLBRIDGE_AI_KEY") || window.SKILLBRIDGE_AI_KEY || OMNIROUTE_KEY || "sk-eec8165def933095-bb990c-1e40de82";
@@ -405,18 +428,18 @@ async function callLiveGenerativeAI(chatHistory) {
             "Content-Type": "application/json",
             "Authorization": `Bearer ${savedKey}`
           },
-          signal: AbortSignal.timeout(3000),
+          signal: AbortSignal.timeout(4000),
           body: JSON.stringify({
             model: m,
             messages: [{ role: "system", content: systemPrompt }, ...chatHistory.slice(-4)],
+            stream: false,
             max_tokens: 250
           })
         });
         if (res.ok) {
-          const data = await res.json();
-          const text = data.choices?.[0]?.message?.content;
+          const text = await parseResponseContent(res);
           if (text) {
-            console.log(`[SkillBridge AI] Responded using local OmniRoute model: ${m}`);
+            console.log(`[SkillBridge AI] Responded using local OmniRoute model (${m}):`, text);
             return text;
           }
         }
@@ -431,14 +454,13 @@ async function callLiveGenerativeAI(chatHistory) {
       const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${savedKey}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        signal: AbortSignal.timeout(3000),
+        signal: AbortSignal.timeout(3500),
         body: JSON.stringify({
           contents: [{ parts: [{ text: `${systemPrompt}\n\nUser Question: ${lastMsg}` }] }]
         })
       });
       if (res.ok) {
-        const data = await res.json();
-        const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+        const text = await parseResponseContent(res);
         if (text) return text;
       }
     } catch (_) {}
@@ -459,19 +481,19 @@ async function callLiveGenerativeAI(chatHistory) {
           "HTTP-Referer": window.location.origin,
           "X-Title": "SkillBridge AI"
         },
-        signal: AbortSignal.timeout(2200),
+        signal: AbortSignal.timeout(2500),
         body: JSON.stringify({
           model: modelName,
           messages: [{ role: "system", content: systemPrompt }, ...chatHistory.slice(-4)],
+          stream: false,
           max_tokens: 250
         })
       });
 
       if (res.ok) {
-        const data = await res.json();
-        const text = data.choices?.[0]?.message?.content;
+        const text = await parseResponseContent(res);
         if (text) {
-          console.log(`[SkillBridge AI] Responded using cloud model: ${modelName}`);
+          console.log(`[SkillBridge AI] Responded using cloud model (${modelName}):`, text);
           return text;
         }
       }
