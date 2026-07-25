@@ -501,40 +501,17 @@
     <!-- Tab 2: Resume -->
     <div class="tab-page" data-tab="2" data-visited="false" role="tabpanel" id="panel-2" aria-labelledby="tab-2">
       <div class="ui-layer resume-wrap">
-        <div class="resume-card reveal-item">
-          <div class="resume-header">
-            <div>
-              <div class="name">Alexandra Chen</div>
-              <div class="title">Senior Full-Stack Engineer</div>
-            </div>
-            <div class="contact">
-              alex.chen@email.com<br/>
-              +1 (555) 234-5678<br/>
-              linkedin.com/in/alexchen<br/>
-              San Francisco, CA
-            </div>
+        <div class="download-bar reveal-item" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;background:var(--surface);padding:12px 18px;border-radius:12px;border:1px solid var(--border);">
+          <div>
+            <h3 style="font-family:var(--font-display);font-size:16px;color:var(--accent);margin:0;">ATS-Ready Resume Preview</h3>
+            <p style="font-size:12px;color:var(--muted);margin:0;">Click any text on paper to edit • Auto-synced with AI Chat</p>
           </div>
-          <div class="resume-divider"></div>
-          <div class="resume-section-title">Professional Summary</div>
-          <p style="font-size:13px;color:#333;line-height:1.6;margin-bottom:16px;">Full-stack engineer with 7+ years building scalable web applications. Expert in React, Node.js, and cloud-native architecture. Passionate about AI-driven developer tools and inclusive hiring practices.</p>
-          <div class="resume-divider"></div>
-          <div class="resume-section-title">Skills</div>
-          <div class="skills">
-            <span class="skill-chip blue">React</span><span class="skill-chip blue">TypeScript</span><span class="skill-chip blue">Node.js</span>
-            <span class="skill-chip green">Python</span><span class="skill-chip green">AWS</span><span class="skill-chip green">Docker</span>
-            <span class="skill-chip purple">GraphQL</span><span class="skill-chip purple">PostgreSQL</span><span class="skill-chip purple">Redis</span>
-            <span class="skill-chip pink">Figma</span><span class="skill-chip pink">Next.js</span><span class="skill-chip pink">Tailwind</span>
-            <span class="skill-chip blue">CI/CD</span><span class="skill-chip green">Kubernetes</span><span class="skill-chip purple">Terraform</span>
+          <div style="display:flex;gap:8px;">
+            <button class="btn-secondary" style="padding:6px 12px;font-size:12px;cursor:pointer;" onclick="addSkillPrompt()">+ Add Skill</button>
+            <button class="btn-primary" style="padding:6px 16px;font-size:12px;cursor:pointer;" onclick="downloadResumePDF()">Download PDF</button>
           </div>
-          <div class="resume-divider"></div>
-          <div class="resume-section-title">Experience</div>
-          <div class="exp-item"><h4>Senior Full-Stack Engineer — TechCorp</h4><div class="meta">Jan 2022 – Present · 3 yrs</div><p>Architected micro-frontend platform serving 2M+ daily users. Reduced CI pipeline time by 60% and led migration to Next.js 14.</p></div>
-          <div class="exp-item"><h4>Full-Stack Developer — InnoVista Labs</h4><div class="meta">Jun 2019 – Dec 2021 · 2.5 yrs</div><p>Built real-time collaboration features used by 500+ enterprise teams. Implemented WebRTC-based document co-editing and GraphQL federation layer.</p></div>
-          <div class="exp-item"><h4>Junior Developer — StartGrid</h4><div class="meta">Mar 2017 – May 2019 · 2.2 yrs</div><p>Developed REST APIs and React component library. Contributed to open-source design system adopted by 12 product teams.</p></div>
-          <div class="resume-divider"></div>
-          <div class="resume-section-title">Education</div>
-          <div class="edu-item"><strong>M.S. Computer Science</strong> — Stanford University, 2017<br/><strong>B.S. Software Engineering</strong> — UC Berkeley, 2015</div>
         </div>
+        <div class="resume-card reveal-item" id="resumeCard"></div>
       </div>
     </div>
 
