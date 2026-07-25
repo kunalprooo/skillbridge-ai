@@ -249,6 +249,17 @@ document.addEventListener("DOMContentLoaded", () => {
   renderJobs();
   renderRoadmap(activeProfile.sector);
   checkApiStatus();
+
+  const sendBtn = document.getElementById("sendBtn");
+  if (sendBtn) {
+    sendBtn.onclick = () => sendMessage();
+  }
+  const chatInput = document.getElementById("chatInput");
+  if (chatInput) {
+    chatInput.onkeydown = (e) => {
+      if (e.key === "Enter") sendMessage();
+    };
+  }
 });
 
 // Switch Tabs
@@ -317,19 +328,16 @@ async function sendMessage() {
   chatContainer.scrollTop = chatContainer.scrollHeight;
 
   let aiReply = null;
-  const modelsToTry = [
-    "antigravity/auto",
-    "antigravity/default",
-    "agy/default",
-    "oc/big-pickle",
-    "auto/best-chat"
-  ];
+  const isLocalHost = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
 
-  for (const modelName of modelsToTry) {
-    try {
-      aiReply = await callOmniRoute(modelName, chatHistory, 2500);
-      if (aiReply) break;
-    } catch (_) {}
+  if (isLocalHost && OMNIROUTE_KEY) {
+    const modelsToTry = ["antigravity/auto", "antigravity/default"];
+    for (const modelName of modelsToTry) {
+      try {
+        aiReply = await callOmniRoute(modelName, chatHistory, 800);
+        if (aiReply) break;
+      } catch (_) {}
+    }
   }
 
   const reply = aiReply ?? processUserSkillInput(text);
