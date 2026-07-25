@@ -1039,6 +1039,25 @@ async function callOmniRoute(model, messages, timeoutMs = 1500) {
   }
 }
 
+function configureApiKeyPrompt() {
+  const currentKey = localStorage.getItem("SKILLBRIDGE_AI_KEY") || OMNIROUTE_KEY || "";
+  const key = prompt("⚙️ Configure your Generative AI Key:\n\nPaste your API Key (Gemini starts with AIza..., Groq starts with gsk_..., OpenRouter starts with sk-or-..., or OmniRoute sk-eec...):", currentKey);
+  
+  if (key !== null) {
+    const cleanKey = key.trim();
+    if (cleanKey) {
+      localStorage.setItem("SKILLBRIDGE_AI_KEY", cleanKey);
+      window.SKILLBRIDGE_AI_KEY = cleanKey;
+      showToast("🟢 Custom AI API Key saved! AI Chat will now use your key.");
+    } else {
+      localStorage.removeItem("SKILLBRIDGE_AI_KEY");
+      window.SKILLBRIDGE_AI_KEY = "";
+      showToast("ℹ️ Custom API key cleared.");
+    }
+  }
+}
+window.configureApiKeyPrompt = configureApiKeyPrompt;
+
 function showToast(message, type = "info") {
   document.querySelectorAll(".toast-notification").forEach(t => t.remove());
   const toast = document.createElement("div");
