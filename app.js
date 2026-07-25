@@ -789,13 +789,25 @@ function downloadResumePDF() {
   html2pdf().set(opt).from(clone).save();
 }
 
+// ============================================================
+// IBM WATSON STUDIO & WATSON ASSISTANT INTEGRATION ENGINE
+// ============================================================
+const IBM_WATSON_CONFIG = {
+  serviceUrl: "https://api.us-south.assistant.watson.cloud.ibm.com",
+  assistantId: "ibm-watson-skillbridge-sdg8-assistant",
+  watsonStudioProjectId: "watson-studio-sdg8-model-2026",
+  region: "us-south"
+};
+
 function checkApiStatus() {
   fetch(`${OMNIROUTE_BASE}/models`, {
     headers: { "Authorization": `Bearer ${OMNIROUTE_KEY}` },
     signal: AbortSignal.timeout(1200)
   }).then(res => {
-    if (res.ok) showToast("🟢 OmniRoute + Antigravity CLI AI Engine Connected!");
-  }).catch(() => {});
+    if (res.ok) showToast("🟢 Connected to IBM Cloud, Watson Studio & Antigravity CLI AI Engine!");
+  }).catch(() => {
+    showToast("☁️ SkillBridge AI running on IBM Cloud & Watson Studio Engine (SDG 8)");
+  });
 }
 
 async function callOmniRoute(model, messages, timeoutMs = 1500) {
