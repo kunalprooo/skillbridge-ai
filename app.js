@@ -467,20 +467,24 @@ async function callLiveGenerativeAI(chatHistory) {
   }
 
   // 3. TRY OPENROUTER / GROQ FREE CLOUD MODELS
-  const isGroq = savedKey.startsWith("gsk_");
+  const isGroq = savedKey && savedKey.startsWith("gsk_");
   const modelsToTry = isGroq ? ["llama-3.1-8b-instant"] : AUTO_FREE_MODELS;
   const endpoint = isGroq ? "https://api.groq.com/openai/v1/chat/completions" : "https://openrouter.ai/api/v1/chat/completions";
 
   for (const modelName of modelsToTry) {
     try {
+      const headers = {
+        "Content-Type": "application/json",
+        "HTTP-Referer": window.location.origin,
+        "X-Title": "SkillBridge AI"
+      };
+      if (savedKey && !savedKey.startsWith("sk-eec")) {
+        headers["Authorization"] = `Bearer ${savedKey}`;
+      }
+
       const res = await fetch(endpoint, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${savedKey}`,
-          "HTTP-Referer": window.location.origin,
-          "X-Title": "SkillBridge AI"
-        },
+        headers: headers,
         signal: AbortSignal.timeout(2500),
         body: JSON.stringify({
           model: modelName,
@@ -561,14 +565,10 @@ function processUserSkillInput(inputStr) {
 
   const lower = inputStr.toLowerCase();
 
-  // 1. Greeting & Casual Chat
-  if (lower.includes("talk") || lower.includes("normal") || lower.includes("chat") || lower.includes("who are you") || lower.includes("how are you")) {
-    return `Absolutely <strong>${activeProfile.name}</strong>! 😊 We can talk naturally about anything — your software engineering projects, tech career goals in <strong>${activeProfile.city}</strong>, resume tips, or regional job openings. What's on your mind?`;
-  }
-
-  const isGreetingOnly = /\b(?:hi|hello|hey|namaste)\b/i.test(inputStr) && inputStr.split(' ').length <= 3;
-  if (isGreetingOnly) {
-    return `Namaste <strong>${activeProfile.name}</strong>! 👋<br><br>I am your SkillBridge AI Assistant. Tell me your name, city, degree, or skills (e.g. <em>"I am Kunal from Delhi with a B.Tech degree"</em>) and I will generate your ATS resume and match you with regional jobs!`;
+  // 1. Casual Chat & General Conversation
+  const isCasualChat = /(?:wassup|what happened|bro|dude|sup|hey|hello|hi|namaste|talk|chat|normal|who are you|how are you)/i.test(inputStr);
+  if (isCasualChat) {
+    return `Hey <strong>${activeProfile.name}</strong>! 👋 Everything is running smoothly. I'm here to help you explore jobs in <strong>${activeProfile.city}</strong>, answer interview questions, or update your ATS resume. What's on your mind?`;
   }
 
   // 2. Interview / Preparation Advice
@@ -601,31 +601,22 @@ function processUserSkillInput(inputStr) {
     `;
   }
 
-  // 5. Standard Profile Update Response
-  const hasSkills = activeProfile.skills && activeProfile.skills.length > 0;
-  if (!hasSkills) {
+  // 5. Profile Update Response (Only when user explicitly provides name/city/skills/degree)
+  const isProfileUpdate = /(?:my name|i am|i'm|from|living|based|degree|b\.tech|btech|b\.sc|bsc|bca|diploma|iti|python|react|javascript|html|css|sql|java|c\+\+|electrician|retail|warehouse|logistic|wiring|solar)/i.test(inputStr);
+  if (isProfileUpdate) {
     return `
-      Great to meet you, <strong>${activeProfile.name}</strong>! I've set up your profile in <strong>${activeProfile.city}</strong> with your <strong>${activeProfile.education}</strong>. ✅<br><br>
+      Great to meet you, <strong>${activeProfile.name}</strong>! I've updated your ATS Resume & Job Predictions. ✅<br><br>
       👤 <strong>Name:</strong> ${activeProfile.name}<br>
       📍 <strong>Location:</strong> ${activeProfile.location}<br>
       🎓 <strong>Education:</strong> ${activeProfile.education}<br>
       💼 <strong>Target Role:</strong> ${activeProfile.title}<br>
-      ⚠️ <strong>Skills:</strong> <em>None added yet.</em><br><br>
-      💡 <strong>What skills or tech stack do you have?</strong><br>
-      (e.g., <code>Python, React, Web Development, Java, SQL, C++, Electrician, Retail</code>)<br><br>
-      👉 Tell me below, or click <strong>+ Add Skill</strong> on your Resume tab!
+      🛠️ <strong>Your Skills:</strong> ${activeProfile.skills.length > 0 ? activeProfile.skills.map(s => `<code>${s}</code>`).join(" ") : "<em>None added yet.</em>"}<br><br>
+      👉 Click the <strong>Resume</strong> tab to view/download your PDF, or <strong>Jobs</strong> to see live active positions in ${activeProfile.city}!
     `;
   }
 
-  return `
-    Great to meet you, <strong>${activeProfile.name}</strong>! I've updated your ATS Resume & Job Predictions. ✅<br><br>
-    👤 <strong>Name:</strong> ${activeProfile.name}<br>
-    📍 <strong>Location:</strong> ${activeProfile.location}<br>
-    🎓 <strong>Education:</strong> ${activeProfile.education}<br>
-    💼 <strong>Target Role:</strong> ${activeProfile.title}<br>
-    🛠️ <strong>Your Skills:</strong> ${activeProfile.skills.map(s => `<code>${s}</code>`).join(" ")}<br><br>
-    👉 Click the <strong>Resume</strong> tab to view/download your PDF, or <strong>Jobs</strong> to see live active positions in ${activeProfile.city}!
-  `;
+  // General Fallback
+  return `I'm listening, <strong>${activeProfile.name}</strong>! 😊 You can tell me your skills, ask about jobs in <strong>${activeProfile.city}</strong>, or request interview prep tips.`;
 }
 
 function processUserSkillInputSilent(inputStr) {
