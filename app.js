@@ -347,14 +347,46 @@ async function sendMessage() {
 function processUserSkillInput(inputStr) {
   processUserSkillInputSilent(inputStr);
 
+  const lower = inputStr.toLowerCase();
+
+  // 1. Greeting
   const isGreetingOnly = /\b(?:hi|hello|hey|namaste)\b/i.test(inputStr) && inputStr.split(' ').length <= 3;
-  
   if (isGreetingOnly) {
-    return `Namaste <strong>${activeProfile.name}</strong>! 👋<br><br>I am your SkillBridge AI Assistant. Tell me about your name, city, degree, or skills (e.g. <em>"I am Kunal from Delhi with a B.Tech degree"</em>) and I will generate your ATS resume and match you with regional jobs!`;
+    return `Namaste <strong>${activeProfile.name}</strong>! 👋<br><br>I am your SkillBridge AI Assistant. Tell me your name, city, degree, or skills (e.g. <em>"I am Kunal from Delhi with a B.Tech degree"</em>) and I will generate your ATS resume and match you with regional jobs!`;
   }
 
-  const hasSkills = activeProfile.skills && activeProfile.skills.length > 0;
+  // 2. Interview / Preparation Advice
+  if (lower.includes("interview") || lower.includes("prepare") || lower.includes("question")) {
+    return `
+      💡 <strong>Interview Preparation Tips for ${activeProfile.title}:</strong><br><br>
+      1️⃣ <strong>Technical Core:</strong> Be prepared to explain hands-on projects using ${activeProfile.skills.slice(0, 3).join(", ") || "your technical skills"}.<br>
+      2️⃣ <strong>Local MSME Focus:</strong> Employers in <strong>${activeProfile.city}</strong> value practical problem-solving, safety compliance, and team coordination.<br>
+      3️⃣ <strong>ATS Resume:</strong> Download your verified SkillBridge ATS PDF from the <strong>Resume</strong> tab and bring 2 printed copies!
+    `;
+  }
 
+  // 3. Salary / Compensation Guidance
+  if (lower.includes("salary") || lower.includes("pay") || lower.includes("package") || lower.includes("earning")) {
+    return `
+      💰 <strong>Regional Salary Insights for ${activeProfile.city}:</strong><br><br>
+      • <strong>${activeProfile.title}:</strong> ₹25,000 – ₹45,000 / month (depending on experience & technical trade certifications).<br>
+      • Top hiring sectors in ${activeProfile.city}: <strong>${activeProfile.sector} & Tech Enterprises</strong>.<br>
+      👉 Check the <strong>Jobs</strong> tab to view live salary ranges for active openings!
+    `;
+  }
+
+  // 4. Course / Micro-Roadmap Guidance
+  if (lower.includes("course") || lower.includes("roadmap") || lower.includes("learn") || lower.includes("study")) {
+    return `
+      📚 <strong>Recommended Micro-Roadmap for ${activeProfile.name}:</strong><br><br>
+      • <strong>Week 1:</strong> Core Skill Certification on IBM SkillsBuild Portal.<br>
+      • <strong>Week 2:</strong> Practical Workplace Safety & Digital Operations.<br><br>
+      👉 Click the <strong>Roadmap</strong> tab at the bottom to start your free 2-week learning modules!
+    `;
+  }
+
+  // 5. Standard Profile Update Response
+  const hasSkills = activeProfile.skills && activeProfile.skills.length > 0;
   if (!hasSkills) {
     return `
       Great to meet you, <strong>${activeProfile.name}</strong>! I've set up your profile in <strong>${activeProfile.city}</strong> with your <strong>${activeProfile.education}</strong>. ✅<br><br>
