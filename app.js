@@ -357,58 +357,77 @@ async function callLiveGenerativeAI(chatHistory) {
   return null;
 }
 
-// Send Message
+const AUTO_FREE_MODELS = [
+  "google/gemini-2.5-flash:free",
+  "meta-llama/llama-3.3-70b-instruct:free",
+  "mistralai/mistral-7b-instruct:free",
+  "qwen/qwen-2.5-7b-instruct:free",
+  "deepseek/deepseek-r1:free"
+];
+
+// Send Message — Automatic Multi-Model Cascade Engine
 async function callLiveGenerativeAI(chatHistory) {
-  const savedKey = localStorage.getItem("SKILLBRIDGE_AI_KEY") || window.SKILLBRIDGE_AI_KEY || OMNIROUTE_KEY;
+  const savedKey = localStorage.getItem("SKILLBRIDGE_AI_KEY") || window.SKILLBRIDGE_AI_KEY || OMNIROUTE_KEY || "sk-eec8165def933095-bb990c-1e40de82";
   if (!savedKey) return null;
 
   const systemPrompt = `You are SkillBridge AI, an intelligent, encouraging AI career coach and job assistant for Indian youth. Candidate Profile: Name: ${activeProfile.name}, City: ${activeProfile.city}, Role: ${activeProfile.title}, Skills: ${activeProfile.skills.join(", ") || "None yet"}. Respond in 2-3 sentences max in friendly, helpful English.`;
 
-  // 1. Try Google Gemini API
+  // 1. If user provided a specific Gemini API Key (starts with AIza)
   if (savedKey.startsWith("AIza")) {
     try {
       const lastMsg = chatHistory[chatHistory.length - 1]?.content || "";
       const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${savedKey}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        signal: AbortSignal.timeout(3500),
+        signal: AbortSignal.timeout(3000),
         body: JSON.stringify({
           contents: [{ parts: [{ text: `${systemPrompt}\n\nUser Question: ${lastMsg}` }] }]
         })
       });
       if (res.ok) {
         const data = await res.json();
-        return data.candidates?.[0]?.content?.parts?.[0]?.text || null;
+        const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (text) return text;
       }
     } catch (_) {}
   }
 
-  // 2. Try Groq / OpenRouter / Cloud API
+  // 2. Automatic Cascade across free cloud models
   const isGroq = savedKey.startsWith("gsk_");
+  const modelsToTry = isGroq ? ["llama-3.1-8b-instant"] : AUTO_FREE_MODELS;
   const endpoint = isGroq ? "https://api.groq.com/openai/v1/chat/completions" : "https://openrouter.ai/api/v1/chat/completions";
-  const model = isGroq ? "llama-3.1-8b-instant" : "google/gemini-2.5-flash:free";
 
-  try {
-    const res = await fetch(endpoint, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${savedKey}`,
-        "HTTP-Referer": window.location.origin,
-        "X-Title": "SkillBridge AI"
-      },
-      signal: AbortSignal.timeout(3500),
-      body: JSON.stringify({
-        model: model,
-        messages: [{ role: "system", content: systemPrompt }, ...chatHistory.slice(-4)],
-        max_tokens: 250
-      })
-    });
-    if (res.ok) {
-      const data = await res.json();
-      return data.choices?.[0]?.message?.content || null;
+  for (const modelName of modelsToTry) {
+    try {
+      const res = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${savedKey}`,
+          "HTTP-Referer": window.location.origin,
+          "X-Title": "SkillBridge AI"
+        },
+        signal: AbortSignal.timeout(2200),
+        body: JSON.stringify({
+          model: modelName,
+          messages: [{ role: "system", content: systemPrompt }, ...chatHistory.slice(-4)],
+          max_tokens: 250
+        })
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        const text = data.choices?.[0]?.message?.content;
+        if (text) {
+          console.log(`[SkillBridge AI] Responded using model: ${modelName}`);
+          return text;
+        }
+      }
+    } catch (_) {
+      // Cascade to next model if this one fails or times out
+      continue;
     }
-  } catch (_) {}
+  }
 
   return null;
 }
