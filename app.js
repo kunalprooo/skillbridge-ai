@@ -249,31 +249,18 @@ document.addEventListener("DOMContentLoaded", () => {
   renderJobs();
   renderRoadmap(activeProfile.sector);
   checkApiStatus();
-
-  const sendBtn = document.getElementById("sendBtn");
-  if (sendBtn) {
-    sendBtn.onclick = () => sendMessage();
-  }
-  const chatInput = document.getElementById("chatInput");
-  if (chatInput) {
-    chatInput.onkeydown = (e) => {
-      if (e.key === "Enter") sendMessage();
-    };
-  }
 });
 
-// Global Function Binds for Inline HTML Handlers
-window.sendMessage          = sendMessage;
-window.loadSampleProfile    = loadSampleProfile;
-window.saveResumeEdits      = saveResumeEdits;
-window.removeSkill          = removeSkill;
-window.addSkillPrompt       = addSkillPrompt;
-window.addExperiencePrompt  = addExperiencePrompt;
-window.resetCurrentProfile  = resetCurrentProfile;
-window.filterJobs           = filterJobs;
-window.applyJob             = applyJob;
-window.openCourse           = openCourse;
-window.downloadResumePDF    = downloadResumePDF;
+// Switch Tabs
+function switchTab(tabId) {
+  document.querySelectorAll('.bottom-tabs .tab').forEach(btn => btn.classList.remove('active'));
+  document.querySelectorAll('.tab-page').forEach(tab => tab.classList.remove('active'));
+
+  const targetNav = document.querySelector(`.bottom-tabs .tab[data-tab="${tabId}"]`);
+  if (targetNav) targetNav.classList.add('active');
+  const targetTab = document.querySelector(`.tab-page[data-tab="${tabId}"]`);
+  if (targetTab) targetTab.classList.add('active');
+}
 
 // Load Sample Candidates
 function loadSampleProfile(type) {
@@ -306,45 +293,6 @@ function loadSampleProfile(type) {
   showToast(`Loaded candidate profile: ${profile.name} (${profile.city}) ✅`);
 }
 
-function configureApiKeyPrompt() {
-  const currentKey = localStorage.getItem("SKILLBRIDGE_AI_KEY") || "";
-  const newKey = prompt("Enter your OpenAI / Groq / Gemini API Key (Leave blank to use built-in Smart AI Engine):", currentKey);
-  if (newKey !== null) {
-    localStorage.setItem("SKILLBRIDGE_AI_KEY", newKey.trim());
-    if (newKey.trim()) {
-      showToast("🟢 Custom AI Cloud API Key saved!");
-    } else {
-      showToast("ℹ️ Switched to Built-in Smart AI Engine.");
-    }
-  }
-}
-window.configureApiKeyPrompt = configureApiKeyPrompt;
-
-async function callOpenAICompatibleAPI(apiKey, messages) {
-  const systemPrompt = `You are SkillBridge AI, an encouraging career assistant for Indian youth. Candidate Name: ${activeProfile.name}, City: ${activeProfile.city}, Target Role: ${activeProfile.title}. Give helpful, concise (2-3 sentences) responses in friendly English.`;
-  const endpoint = apiKey.startsWith("gsk_")
-    ? "https://api.groq.com/openai/v1/chat/completions"
-    : "https://api.openai.com/v1/chat/completions";
-  const model = apiKey.startsWith("gsk_") ? "llama-3.1-8b-instant" : "gpt-3.5-turbo";
-
-  const res = await fetch(endpoint, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${apiKey}`
-    },
-    signal: AbortSignal.timeout(3500),
-    body: JSON.stringify({
-      model: model,
-      messages: [{ role: "system", content: systemPrompt }, ...messages.slice(-4)],
-      max_tokens: 250
-    })
-  });
-  if (!res.ok) return null;
-  const data = await res.json();
-  return data.choices?.[0]?.message?.content || null;
-}
-
 // Send Message
 async function sendMessage() {
   const input = document.getElementById("chatInput");
@@ -369,26 +317,18 @@ async function sendMessage() {
   chatContainer.scrollTop = chatContainer.scrollHeight;
 
   let aiReply = null;
+  const isLocalHost = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
 
-  // 1. Try Custom User API Key if configured
-  const customKey = localStorage.getItem("SKILLBRIDGE_AI_KEY") || window.SKILLBRIDGE_AI_KEY;
-  if (customKey) {
-    try {
-      aiReply = await callOpenAICompatibleAPI(customKey, chatHistory);
-    } catch (_) {}
-  }
-
-  // 2. Try Localhost OmniRoute if running on localhost
-  if (!aiReply) {
-    const isLocalHost = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
-    if (isLocalHost && OMNIROUTE_KEY) {
+  if (isLocalHost && window.OMNIROUTE_KEY) {
+    const modelsToTry = ["antigravity/auto", "antigravity/default"];
+    for (const modelName of modelsToTry) {
       try {
-        aiReply = await callOmniRoute("antigravity/auto", chatHistory, 800);
+        aiReply = await callOmniRoute(modelName, chatHistory, 800);
+        if (aiReply) break;
       } catch (_) {}
     }
   }
 
-  // 3. Fallback to Smart Internal AI Engine
   const reply = aiReply ?? processUserSkillInput(text);
   chatHistory.push({ role: "assistant", content: reply });
 
@@ -851,7 +791,7 @@ function checkApiStatus() {
     headers: { "Authorization": `Bearer ${OMNIROUTE_KEY}` },
     signal: AbortSignal.timeout(1200)
   }).then(res => {
-    if (res.ok) showToast("🟢 Antigravity CLI AI Engine Connected!");
+    if (res.ok) showToast("🟢 OmniRoute + Antigravity CLI AI Engine Connected!");
   }).catch(() => {});
 }
 
