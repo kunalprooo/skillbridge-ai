@@ -1,15 +1,13 @@
+
 <!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-  <title>SkillBridge AI — Hyper-Local Career & Job Prediction System (SDG 8)</title>
-  <meta name="description" content="SkillBridge AI bridges the employment gap for youth in Tier-2/3 cities using conversational AI, vernacular speech processing, and predictive skill matching. IBM SkillsBuild SDG 8 Project.">
+  <title>SkillBridge AI</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
@@ -133,13 +131,13 @@
       background: var(--surface); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
       border-bottom: 1px solid var(--border); flex-shrink: 0;
     }
-    nav .brand { display: flex; align-items: center; gap: 10px; font-family: var(--font-display); font-weight: 700; font-size: 18px; color: var(--fg); text-decoration: none; }
+    nav .brand { display: flex; align-items: center; gap: 10px; font-family: var(--font-display); font-weight: 700; font-size: 18px; color: var(--fg); }
     nav .brand svg { width: 28px; height: 28px; }
     nav .nav-links { display: flex; align-items: center; gap: 16px; }
     .sdg-badge {
       padding: 4px 12px; border-radius: 999px;
       background: rgba(16,185,129,0.12); border: 1px solid rgba(16,185,129,0.2);
-      color: var(--emerald); font-size: 10px; font-weight: 600; letter-spacing: 0.06em;
+      color: var(--emerald); font-size: 11px; font-weight: 600; letter-spacing: 0.06em;
     }
     .audio-indicator {
       display: flex; align-items: center; gap: 3px;
@@ -204,17 +202,6 @@
       -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
     }
     .chat-header p { font-size: 12px; color: var(--muted); margin-top: 2px; }
-
-    .sample-chips {
-      display: flex; gap: 8px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 8px;
-    }
-    .sample-chip {
-      background: var(--surface); border: 1px solid var(--border); color: var(--fg);
-      padding: 5px 12px; border-radius: 20px; font-size: 11px; cursor: pointer;
-      white-space: nowrap; transition: all 0.2s; backdrop-filter: blur(8px);
-    }
-    .sample-chip:hover { border-color: var(--accent); background: rgba(99,102,241,0.2); }
-
     .messages {
       flex: 1; overflow-y: auto;
       display: flex; flex-direction: column; gap: 10px;
@@ -237,10 +224,6 @@
       background: linear-gradient(135deg, rgba(99,102,241,0.3), rgba(139,92,246,0.2));
       border: 1px solid rgba(99,102,241,0.2);
       border-bottom-right-radius: 4px;
-    }
-    .msg code {
-      background: rgba(99,102,241,0.25); color: #c4b5fd;
-      padding: 1px 6px; border-radius: 4px; font-size: 0.9em; font-family: monospace;
     }
     .input-area {
       display: flex; gap: 8px; padding: 12px 0;
@@ -273,37 +256,13 @@
       cursor: pointer; transition: all 0.2s; flex-shrink: 0;
     }
     .send-btn:hover { box-shadow: 0 4px 16px rgba(99,102,241,0.3); }
+    .send-btn:disabled {
+      background: rgba(255,255,255,0.06); color: var(--muted); cursor: default;
+      box-shadow: none;
+    }
 
-    /* EDITABLE RESUME FIELDS */
-    .editable-field {
-      border: 1px dashed transparent;
-      border-radius: 4px;
-      padding: 2px 4px;
-      transition: all 0.2s ease;
-      outline: none;
-    }
-    .editable-field:hover {
-      border-color: rgba(99,102,241,0.4);
-      background: rgba(99,102,241,0.05);
-      cursor: text;
-    }
-    .editable-field:focus {
-      border-color: #6366f1;
-      background: rgba(99,102,241,0.1);
-      box-shadow: 0 0 0 2px rgba(99,102,241,0.2);
-    }
-    .remove-skill-btn {
-      margin-left: 6px;
-      cursor: pointer;
-      font-weight: bold;
-      opacity: 0.6;
-    }
-    .remove-skill-btn:hover {
-      opacity: 1;
-      color: #ef4444;
-    }
-    .resume-wrap { display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding: 24px 16px; min-height: 100%; }
-    .download-bar { width: 100%; max-width: 800px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+    /* === RESUME TAB === */
+    .resume-wrap { display: flex; align-items: center; justify-content: center; padding: 24px 16px; min-height: 100%; }
     .resume-card {
       width: 100%; max-width: 800px;
       background: #fff; border-radius: 16px;
@@ -368,7 +327,7 @@
     .job-card .title { font-family: var(--font-display); font-size: 16px; font-weight: 600; margin: 2px 0 6px; }
     .job-card .tags { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 10px; }
     .job-card .tags span {
-      padding: 2px 8px; border-radius: 999px; font-size: 10px; font-weight: 500;
+      padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 500;
       background: rgba(99,102,241,0.1); color: var(--accent); border: 1px solid rgba(99,102,241,0.15);
     }
     .job-card .bottom { display: flex; justify-content: space-between; align-items: center; padding-top: 10px; border-top: 1px solid var(--border); }
@@ -377,7 +336,7 @@
     .match-ring svg { width: 40px; height: 40px; transform: rotate(-90deg); }
     .match-ring .bg { fill: none; stroke: rgba(255,255,255,0.05); stroke-width: 3; }
     .match-ring .progress { fill: none; stroke-width: 3; stroke-linecap: round; }
-    .match-ring .label { position: absolute; font-size: 10px; font-weight: 700; letter-spacing: -0.01em; }
+    .match-ring .label { position: absolute; font-size: 11px; font-weight: 700; letter-spacing: -0.01em; }
     .apply-btn {
       padding: 6px 16px; border-radius: 8px; border: none;
       background: linear-gradient(135deg, #6366f1, #8b5cf6); color: #fff;
@@ -385,7 +344,7 @@
       cursor: pointer; transition: all 0.2s;
     }
     .apply-btn:hover { box-shadow: 0 4px 16px rgba(99,102,241,0.3); }
-    .apply-btn.applied { background: rgba(16,185,129,0.2); color: var(--emerald); pointer-events: none; }
+    .apply-btn.applied { background: rgba(16,185,129,0.2); color: var(--emerald); pointer-events: none; opacity: 0.7; }
 
     /* === ROADMAP TAB === */
     .roadmap-wrap { padding: 24px 16px 32px; min-height: 100%; }
@@ -431,21 +390,11 @@
     .step .content .status-badge {
       display: inline-block; margin-top: 6px;
       padding: 2px 8px; border-radius: 999px;
-      font-size: 10px; font-weight: 600; letter-spacing: 0.03em;
+      font-size: 11px; font-weight: 600; letter-spacing: 0.03em;
     }
     .status-badge.completed { background: rgba(16,185,129,0.12); color: var(--emerald); border: 1px solid rgba(16,185,129,0.2); }
     .status-badge.in-progress { background: rgba(99,102,241,0.12); color: var(--accent); border: 1px solid rgba(99,102,241,0.2); }
     .status-badge.locked { background: rgba(136,146,164,0.1); color: var(--muted); border: 1px solid rgba(255,255,255,0.05); }
-
-    /* TOAST NOTIFICATION */
-    .toast-notification {
-      position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%) translateY(20px);
-      background: rgba(30,41,59,0.95); border: 1px solid var(--border);
-      color: var(--fg); padding: 12px 24px; border-radius: 12px;
-      font-size: 13px; font-weight: 500; z-index: 9999; opacity: 0; pointer-events: none;
-      transition: all 0.35s ease; backdrop-filter: blur(12px); box-shadow: 0 8px 32px rgba(0,0,0,0.5);
-    }
-    .toast-notification.toast-visible { opacity: 1; transform: translateX(-50%) translateY(0); }
 
     @media (max-width:600px) {
       .resume-card { padding: 24px 20px; }
@@ -456,6 +405,19 @@
       .hero { padding: 24px 16px; }
       .chat-container { padding: 12px; }
       .step .node { width: 40px; height: 40px; font-size: 11px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .tab-page, .tab-page.active, .tab-page.exit { transition: none !important; transform: none !important; opacity: 1 !important; }
+      .reveal-item, .reveal-item.revealed { transition: none !important; opacity: 1 !important; transform: none !important; }
+      .mic-btn, .mic-btn.active, .btn-primary, .btn-secondary, .apply-btn { transition: none !important; }
+      .splash-logo .ring { animation: none; stroke-dashoffset: 0; }
+      .splash-logo .inner { animation: none; opacity: 1; }
+      .splash-bar-fill { animation: none; width: 100%; }
+      .splash-text { animation: none; opacity: 1; }
+      .job-card { transition: none !important; }
+      .resume-card, .resume-card:hover { transition: none !important; transform: none !important; }
+      .step .node.in-progress { animation: none; }
+      .audio-indicator .bar { animation: none; opacity: 1; }
     }
   </style>
 </head>
@@ -482,14 +444,14 @@
       </svg>
     </div>
     <div class="splash-bar"><div class="splash-bar-fill"></div></div>
-    <div class="splash-text">SkillBridge AI — SDG 8 Engine</div>
+    <div class="splash-text">Preparing your experience</div>
   </div>
 
   <canvas id="three-canvas"></canvas>
 
   <div class="page-container" id="pageContainer">
     <!-- Tab 0: Home / Hero -->
-    <div class="tab-page active" data-tab="0" data-visited="false">
+    <div class="tab-page active" data-tab="0" data-visited="false" role="tabpanel" id="panel-0" aria-labelledby="tab-0">
       <div class="ui-layer hero-page">
         <nav>
           <a class="brand" href="#">
@@ -515,167 +477,108 @@
     </div>
 
     <!-- Tab 1: Voice -->
-    <div class="tab-page" data-tab="1" data-visited="false">
+    <div class="tab-page" data-tab="1" data-visited="false" role="tabpanel" id="panel-1" aria-labelledby="tab-1">
       <div class="ui-layer" style="display:flex;flex-direction:column;height:100%;">
         <div class="chat-container" style="flex:1;display:flex;flex-direction:column;">
-          <div class="chat-header" style="display:flex;justify-content:space-between;align-items:flex-start;">
-            <div>
-              <h2 class="reveal-item">AI Chat Assistant (2026)</h2>
-              <p class="reveal-item">Chat with AI to auto-generate & update your live ATS Resume & Job predictions</p>
-            </div>
-            <button onclick="configureApiKeyPrompt()" class="sample-chip reveal-item" style="background:rgba(99,102,241,0.15);border:1px solid rgba(99,102,241,0.3);color:#818cf8;font-size:11px;padding:4px 10px;cursor:pointer;margin:0;">
-              ⚙️ AI Settings
-            </button>
+          <div class="chat-header">
+            <h2 class="reveal-item">Voice Assistant</h2>
+            <p class="reveal-item">Ask about jobs, skills, or career paths</p>
           </div>
-
-          <div class="sample-chips reveal-item">
-            <button class="sample-chip" onclick="loadSampleProfile('electrician')">⚡ Rahul (Jaipur) — Electrician</button>
-            <button class="sample-chip" onclick="loadSampleProfile('retail')">🛍️ Priya (Coimbatore) — Retail</button>
-            <button class="sample-chip" onclick="loadSampleProfile('logistic')">📦 Amit (Lucknow) — Warehouse</button>
-          </div>
-
           <div class="messages" id="chatMessages" role="log" aria-live="polite" aria-label="Chat messages">
-            <div class="msg bot reveal-item">Namaste! 👋 I'm your SkillBridge AI assistant. Tell me your name, city, degree, or skills (e.g. <em>"I am Kunal from Delhi with a B.Tech degree"</em>).</div>
+            <div class="msg bot reveal-item">Hi! I'm your SkillBridge AI assistant. Try asking about job matches, skill gaps, or career roadmap.</div>
           </div>
           <div class="input-area">
-            <input type="text" id="chatInput" placeholder="Type a message..." class="reveal-item" onkeypress="handleKeyPress(event)" />
-            <button class="send-btn reveal-item" id="sendBtn" onclick="sendMessage()">Send</button>
+            <button class="mic-btn reveal-item" id="micBtn" aria-label="Toggle microphone">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="2" width="6" height="11" rx="3"/><path d="M5 12a7 7 0 0 0 14 0"/><line x1="12" y1="19" x2="12" y2="22"/></svg>
+            </button>
+            <input type="text" id="chatInput" placeholder="Type a message..." class="reveal-item" />
+            <button class="send-btn reveal-item" id="sendBtn">Send</button>
           </div>
         </div>
       </div>
     </div>
 
     <!-- Tab 2: Resume -->
-    <div class="tab-page" data-tab="2" data-visited="false">
+    <div class="tab-page" data-tab="2" data-visited="false" role="tabpanel" id="panel-2" aria-labelledby="tab-2">
       <div class="ui-layer resume-wrap">
-        <div class="download-bar reveal-item">
-          <div>
-            <h3 style="font-family:var(--font-display);font-size:16px;color:var(--accent);">
-              <i class="fa-solid fa-pen-to-square"></i> ATS Resume Builder & Editor
-            </h3>
-            <p style="font-size:12px;color:var(--muted)">Click any text below to edit inline. Changes auto-sync in real time!</p>
-          </div>
-          <div style="display:flex;gap:8px;align-items:center;">
-            <button className="btn-secondary" style="padding:8px 14px;font-size:12px;border-radius:10px;border:1px solid var(--border);background:var(--surface);color:var(--fg);cursor:pointer;" onclick="resetCurrentProfile()">
-              <i class="fa-solid fa-rotate-left"></i> Reset
-            </button>
-            <button class="btn-primary" style="padding:8px 18px;font-size:13px;" onclick="downloadResumePDF()">
-              <i class="fa-solid fa-download"></i> Download PDF
-            </button>
-          </div>
-        </div>
-
-        <div class="resume-card reveal-item" id="resumePaper">
+        <div class="resume-card reveal-item">
           <div class="resume-header">
             <div>
-              <div class="name editable-field" id="resName" contenteditable="true" onblur="saveResumeEdits()" title="Click to edit name">Rahul Sharma</div>
-              <div class="title editable-field" id="resTitle" contenteditable="true" onblur="saveResumeEdits()" title="Click to edit job title">Certified Electrician & Solar Installation Technician</div>
+              <div class="name">Alexandra Chen</div>
+              <div class="title">Senior Full-Stack Engineer</div>
             </div>
             <div class="contact">
-              <span class="editable-field" id="resLocation" contenteditable="true" onblur="saveResumeEdits()" title="Click to edit location">Jaipur, Rajasthan</span><br/>
-              <span class="editable-field" id="resEmail" contenteditable="true" onblur="saveResumeEdits()" title="Click to edit email">rahul.sharma.tech@gmail.com</span><br/>
-              <span class="editable-field" id="resPhone" contenteditable="true" onblur="saveResumeEdits()" title="Click to edit phone">+91 98765 43210</span>
+              alex.chen@email.com<br/>
+              +1 (555) 234-5678<br/>
+              linkedin.com/in/alexchen<br/>
+              San Francisco, CA
             </div>
           </div>
           <div class="resume-divider"></div>
           <div class="resume-section-title">Professional Summary</div>
-          <p class="editable-field" id="resSummary" contenteditable="true" onblur="saveResumeEdits()" title="Click to edit summary" style="font-size:13px;color:#333;line-height:1.6;margin-bottom:16px;">Motivated technician with 2+ years of hands-on experience in residential electrical wiring, circuit debugging, and rooftop solar panel installation. Seeking hyper-local employment in Jaipur region MSMEs.</p>
+          <p style="font-size:13px;color:#333;line-height:1.6;margin-bottom:16px;">Full-stack engineer with 7+ years building scalable web applications. Expert in React, Node.js, and cloud-native architecture. Passionate about AI-driven developer tools and inclusive hiring practices.</p>
           <div class="resume-divider"></div>
-          
-          <div style="display:flex;justify-content:space-between;align-items:center;">
-            <div class="resume-section-title">Skills & Technical Competencies</div>
-            <button onclick="addSkillPrompt()" style="font-size:11px;padding:3px 10px;border-radius:12px;border:1px solid #6366f1;background:rgba(99,102,241,0.1);color:#6366f1;cursor:pointer;font-weight:600;"><i class="fa-solid fa-plus"></i> Add Skill</button>
+          <div class="resume-section-title">Skills</div>
+          <div class="skills">
+            <span class="skill-chip blue">React</span><span class="skill-chip blue">TypeScript</span><span class="skill-chip blue">Node.js</span>
+            <span class="skill-chip green">Python</span><span class="skill-chip green">AWS</span><span class="skill-chip green">Docker</span>
+            <span class="skill-chip purple">GraphQL</span><span class="skill-chip purple">PostgreSQL</span><span class="skill-chip purple">Redis</span>
+            <span class="skill-chip pink">Figma</span><span class="skill-chip pink">Next.js</span><span class="skill-chip pink">Tailwind</span>
+            <span class="skill-chip blue">CI/CD</span><span class="skill-chip green">Kubernetes</span><span class="skill-chip purple">Terraform</span>
           </div>
-          <div class="skills" id="resSkills"></div>
-          
           <div class="resume-divider"></div>
-          <div style="display:flex;justify-content:space-between;align-items:center;">
-            <div class="resume-section-title">Work Experience</div>
-            <button onclick="addExperiencePrompt()" style="font-size:11px;padding:3px 10px;border-radius:12px;border:1px solid #10b981;background:rgba(16,185,129,0.1);color:#10b981;cursor:pointer;font-weight:600;"><i class="fa-solid fa-plus"></i> Add Experience</button>
-          </div>
-          <div id="resExperience"></div>
-          
+          <div class="resume-section-title">Experience</div>
+          <div class="exp-item"><h4>Senior Full-Stack Engineer — TechCorp</h4><div class="meta">Jan 2022 – Present · 3 yrs</div><p>Architected micro-frontend platform serving 2M+ daily users. Reduced CI pipeline time by 60% and led migration to Next.js 14.</p></div>
+          <div class="exp-item"><h4>Full-Stack Developer — InnoVista Labs</h4><div class="meta">Jun 2019 – Dec 2021 · 2.5 yrs</div><p>Built real-time collaboration features used by 500+ enterprise teams. Implemented WebRTC-based document co-editing and GraphQL federation layer.</p></div>
+          <div class="exp-item"><h4>Junior Developer — StartGrid</h4><div class="meta">Mar 2017 – May 2019 · 2.2 yrs</div><p>Developed REST APIs and React component library. Contributed to open-source design system adopted by 12 product teams.</p></div>
           <div class="resume-divider"></div>
-          <div class="resume-section-title">Education & Certifications</div>
-          <div class="edu-item editable-field" id="resEducation" contenteditable="true" onblur="saveResumeEdits()" title="Click to edit education">
-            <strong>ITI Diploma in Electrical Trade</strong> — Government ITI College, Jaipur (2023)
-          </div>
+          <div class="resume-section-title">Education</div>
+          <div class="edu-item"><strong>M.S. Computer Science</strong> — Stanford University, 2017<br/><strong>B.S. Software Engineering</strong> — UC Berkeley, 2015</div>
         </div>
       </div>
     </div>
 
     <!-- Tab 3: Jobs -->
-    <div class="tab-page" data-tab="3" data-visited="false">
+    <div class="tab-page" data-tab="3" data-visited="false" role="tabpanel" id="panel-3" aria-labelledby="tab-3">
       <div class="ui-layer jobs-wrap">
         <div class="page-header">
-          <h2 class="reveal-item">Real-World Job Prediction Engine</h2>
-          <p class="reveal-item">Verified live positions across India matched to your skill profile</p>
-          <div style="margin-top: 10px; display: flex; justify-content: center; gap: 8px; flex-wrap: wrap;" class="reveal-item">
-            <span class="sdg-badge" style="background: rgba(16,185,129,0.15); border-color: rgba(16,185,129,0.3);">🟢 LIVE REAL-WORLD DATA</span>
-            <span class="sdg-badge" style="background: rgba(99,102,241,0.15); border-color: rgba(99,102,241,0.3); color: #a5b4fc;">⚡ 35+ ACTIVE VERIFIED POSTINGS</span>
-          </div>
+          <h2 class="reveal-item">Job Matches</h2>
+          <p class="reveal-item">AI-curated positions based on your skills and preferences</p>
         </div>
-
-        <div style="max-width: 1000px; margin: 0 auto 24px; display: flex; gap: 12px; flex-wrap: wrap;" class="reveal-item">
-          <input type="text" id="jobSearchInput" placeholder="🔍 Search real jobs (e.g. Solar, Electrician, Python, Retail, Logistics)..." onkeyup="filterJobs()" style="flex: 2; min-width: 240px; padding: 12px 16px; border-radius: 12px; border: 1px solid var(--border); background: var(--surface); color: var(--fg); font-family: var(--font-body); font-size: 14px; outline: none; backdrop-filter: blur(8px);" />
-          
-          <select id="cityFilter" onchange="filterJobs()" style="flex: 1; min-width: 140px; padding: 12px 16px; border-radius: 12px; border: 1px solid var(--border); background: var(--surface); color: var(--fg); font-family: var(--font-body); font-size: 13px; outline: none; cursor: pointer; backdrop-filter: blur(8px);">
-            <option value="all">📍 All Cities</option>
-            <option value="Jaipur">Jaipur</option>
-            <option value="Coimbatore">Coimbatore</option>
-            <option value="Lucknow">Lucknow</option>
-            <option value="Bangalore">Bangalore</option>
-            <option value="Delhi">Delhi / NCR</option>
-            <option value="Mumbai">Mumbai</option>
-            <option value="Pune">Pune</option>
-            <option value="Hyderabad">Hyderabad</option>
-            <option value="Indore">Indore</option>
-          </select>
-
-          <select id="sectorFilter" onchange="filterJobs()" style="flex: 1; min-width: 140px; padding: 12px 16px; border-radius: 12px; border: 1px solid var(--border); background: var(--surface); color: var(--fg); font-family: var(--font-body); font-size: 13px; outline: none; cursor: pointer; backdrop-filter: blur(8px);">
-            <option value="all">💼 All Sectors</option>
-            <option value="Electrical">Electrical & Renewable</option>
-            <option value="Retail">Retail & Commerce</option>
-            <option value="Logistics">Logistics & Warehouse</option>
-            <option value="IT">IT & Tech Software</option>
-            <option value="Engineering">Engineering & MSME</option>
-          </select>
-        </div>
-
         <div class="jobs-grid" id="jobsGrid"></div>
       </div>
     </div>
 
     <!-- Tab 4: Roadmap -->
-    <div class="tab-page" data-tab="4" data-visited="false">
+    <div class="tab-page" data-tab="4" data-visited="false" role="tabpanel" id="panel-4" aria-labelledby="tab-4">
       <div class="ui-layer roadmap-wrap">
         <div class="page-header">
-          <h2 class="reveal-item">Micro-Upskilling Roadmap</h2>
-          <p class="reveal-item">2-Week targeted learning journey powered by AI</p>
+          <h2 class="reveal-item">Upskilling Roadmap</h2>
+          <p class="reveal-item">14-step personalized learning journey powered by AI</p>
         </div>
         <div class="roadmap" id="roadmap"></div>
       </div>
     </div>
   </div>
 
-  <nav class="bottom-tabs" role="navigation" aria-label="App tabs">
-    <button class="tab active" data-tab="0" onclick="window.switchTab(0)" aria-current="page">
+  <div class="bottom-tabs" role="tablist" aria-label="App sections">
+    <button class="tab active" data-tab="0" onclick="window.switchTab(0)" aria-current="page" role="tab" aria-selected="true" id="tab-0" aria-controls="panel-0">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
       <span>Home</span>
     </button>
-    <button class="tab" data-tab="1" onclick="window.switchTab(1)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
-      <span>AI Chat</span>
+    <button class="tab" data-tab="1" onclick="window.switchTab(1)" role="tab" aria-selected="false" id="tab-1" aria-controls="panel-1">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m-4 0h8"/><rect x="9" y="2" width="6" height="11" rx="3"/><path d="M5 12a7 7 0 0014 0"/></svg>
+      <span>Voice</span>
     </button>
-    <button class="tab" data-tab="2" onclick="window.switchTab(2)">
+    <button class="tab" data-tab="2" onclick="window.switchTab(2)" role="tab" aria-selected="false" id="tab-2" aria-controls="panel-2">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 12h6M9 16h6"/><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="2" x2="8" y2="4"/><line x1="16" y1="2" x2="16" y2="4"/></svg>
       <span>Resume</span>
     </button>
-    <button class="tab" data-tab="3" onclick="window.switchTab(3)">
+    <button class="tab" data-tab="3" onclick="window.switchTab(3)" role="tab" aria-selected="false" id="tab-3" aria-controls="panel-3">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/><path d="M16 11l-4 4-2-2"/></svg>
       <span>Jobs</span>
     </button>
-    <button class="tab" data-tab="4" onclick="window.switchTab(4)">
+    <button class="tab" data-tab="4" onclick="window.switchTab(4)" role="tab" aria-selected="false" id="tab-4" aria-controls="panel-4">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
       <span>Roadmap</span>
     </button>
@@ -710,6 +613,7 @@
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.2;
 
+    // === Scene definitions ===
     var scenes = [];
 
     function makeScene(config) {
@@ -740,7 +644,7 @@
       };
     }
 
-    // ---- Scene 0: Home — 3D Geometric Icosahedron Sphere with Bloom & Orbits ----
+    // ---- Scene 0: Home — geometric hero cluster with bloom ----
     (function(){
       var s = makeScene({
         camZ: 24,
@@ -749,11 +653,19 @@
         bloomThreshold: 0.05
       });
 
+      // Hero model: geometric cluster
       var group = new THREE.Group();
 
+      // Central icosahedron with wireframe + solid
       var icoGeo = new THREE.IcosahedronGeometry(2.8, 1);
       var icoMat = new THREE.MeshPhysicalMaterial({
-        color: 0x6366f1, metalness: 0.3, roughness: 0.2, transparent: true, opacity: 0.25
+        color: 0x6366f1,
+        metalness: 0.3,
+        roughness: 0.2,
+        transparent: true,
+        opacity: 0.25,
+        wireframe: false,
+        envMapIntensity: 0.6
       });
       var ico = new THREE.Mesh(icoGeo, icoMat);
       group.add(ico);
@@ -764,19 +676,27 @@
       );
       group.add(wireIco);
 
+      // Outer torus knot ring
       var knotGeo = new THREE.TorusKnotGeometry(4.5, 1.2, 120, 8);
       var knotMat = new THREE.MeshPhysicalMaterial({
-        color: 0xd946ef, metalness: 0.6, roughness: 0.1, transparent: true, opacity: 0.12, wireframe: true
+        color: 0xd946ef,
+        metalness: 0.6,
+        roughness: 0.1,
+        transparent: true,
+        opacity: 0.12,
+        wireframe: true,
       });
       var knot = new THREE.Mesh(knotGeo, knotMat);
       group.add(knot);
 
+      // Orbiting small octahedra
       var orbiters = [];
       for (var i = 0; i < 8; i++) {
         var octGeo = new THREE.OctahedronGeometry(0.4);
         var octMat = new THREE.MeshPhysicalMaterial({
           color: new THREE.Color().setHSL(0.65 + i * 0.04, 0.8, 0.55),
-          metalness: 0.5, roughness: 0.2,
+          metalness: 0.5,
+          roughness: 0.2,
           emissive: new THREE.Color().setHSL(0.65 + i * 0.04, 0.8, 0.3),
           emissiveIntensity: 0.3
         });
@@ -785,14 +705,16 @@
         var radius = 6.5;
         oct.position.set(Math.cos(angle) * radius, Math.sin(angle * 2) * 2, Math.sin(angle) * radius);
         group.add(oct);
-        orbiters.push({ mesh: oct, angle: angle, radius: radius, speed: 0.3 + Math.random() * 0.2 });
+        orbiters.push({ mesh: oct, angle: angle, radius: radius, speed: 0.3 + Math.random() * 0.2, yOff: Math.random() * 4 });
       }
 
       s.scene.add(group);
 
+      // Particle sphere
       var pCount = 3000;
       var pos = new Float32Array(pCount * 3);
       var cols = new Float32Array(pCount * 3);
+      var sizes = new Float32Array(pCount);
       for (var i = 0; i < pCount; i++) {
         var theta = Math.random() * Math.PI * 2;
         var phi = Math.acos(2 * Math.random() - 1);
@@ -803,20 +725,31 @@
         var c = new THREE.Color();
         c.setHSL(0.6 + Math.random() * 0.25, 0.7, 0.4 + Math.random() * 0.4);
         cols[i*3] = c.r; cols[i*3+1] = c.g; cols[i*3+2] = c.b;
+        sizes[i] = 0.08 + Math.random() * 0.2;
       }
       var pGeo = new THREE.BufferGeometry();
       pGeo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
       pGeo.setAttribute('color', new THREE.BufferAttribute(cols, 3));
+      pGeo.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
       var pMat = new THREE.PointsMaterial({
-        size: 0.12, vertexColors: true, transparent: true, opacity: 0.6,
+        size: 0.15, vertexColors: true, transparent: true, opacity: 0.6,
         blending: THREE.AdditiveBlending, sizeAttenuation: true
       });
       var field = new THREE.Points(pGeo, pMat);
       s.scene.add(field);
 
+      // Directional lights
       var light1 = new THREE.DirectionalLight(0x8b5cf6, 1.0);
       light1.position.set(10, 15, 20);
       s.scene.add(light1);
+      var light2 = new THREE.PointLight(0xd946ef, 0.5, 40);
+      light2.position.set(-10, -5, 10);
+      s.scene.add(light2);
+      var light3 = new THREE.PointLight(0x6366f1, 0.4, 30);
+      light3.position.set(5, -10, -15);
+      s.scene.add(light3);
+
+      s.userData = { field: field, group: group, knot: knot, orbiters: orbiters };
 
       s.animate = function() {
         var t = Date.now() * 0.0004;
@@ -830,151 +763,345 @@
           o.mesh.position.x = Math.cos(a) * o.radius;
           o.mesh.position.z = Math.sin(a) * o.radius;
           o.mesh.position.y = Math.sin(a * 2 + t) * 2;
+          o.mesh.rotation.x = t * 2 + i;
+          o.mesh.rotation.z = t * 1.5 + i * 0.5;
         }
 
         field.rotation.y = t * 0.05;
+        field.rotation.x = Math.sin(t * 0.1) * 0.04;
+
+        // Mouse parallax
         smoothMX += (mouseX - smoothMX) * 0.03;
         smoothMY += (mouseY - smoothMY) * 0.03;
         s.camera.position.x = smoothMX * 3;
         s.camera.position.y = -smoothMY * 3 + Math.sin(t * 0.2) * 0.5;
+
+        // Scroll-reactive: particles rotate with scroll
+        var sv = scrollValues[0] * 0.0005;
+        field.rotation.x += sv * 0.0003;
+        field.rotation.z += sv * 0.0002;
+        group.rotation.x += sv * 0.0001;
+
         s.camera.lookAt(0, 0, 0);
       };
 
       scenes.push(s);
     })();
 
-    // ---- Scene 1: AI Chat — Sleek AI Data Sphere + Star Particle Field ----
+    // ---- Scene 1: Voice — radial wave bars + bloom ----
     (function(){
-      var s = makeScene({ camZ: 20, bloomStrength: 0.45 });
-
-      var aiGroup = new THREE.Group();
-
-      var coreGeo = new THREE.OctahedronGeometry(2.4, 2);
-      var coreMat = new THREE.MeshPhysicalMaterial({
-        color: 0x10b981, metalness: 0.4, roughness: 0.15, transparent: true, opacity: 0.3
+      var s = makeScene({
+        camZ: 20,
+        bloomStrength: 0.4,
+        bloomRadius: 0.3,
+        bloomThreshold: 0.1
       });
-      var coreMesh = new THREE.Mesh(coreGeo, coreMat);
-      aiGroup.add(coreMesh);
 
-      var wireGeo = new THREE.IcosahedronGeometry(3.2, 1);
-      var wireMat = new THREE.MeshBasicMaterial({ color: 0x06b6d4, wireframe: true, transparent: true, opacity: 0.2 });
-      var wireMesh = new THREE.Mesh(wireGeo, wireMat);
-      aiGroup.add(wireMesh);
+      var count = 2000;
+      var pos = new Float32Array(count * 3);
+      for (var i = 0; i < count; i++) {
+        pos[i*3] = (Math.random() - 0.5) * 50;
+        pos[i*3+1] = (Math.random() - 0.5) * 50;
+        pos[i*3+2] = (Math.random() - 0.5) * 50;
+      }
+      var geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+      var pMat = new THREE.PointsMaterial({
+        color: 0x10b981, size: 0.08, transparent: true, opacity: 0.4,
+        blending: THREE.AdditiveBlending
+      });
+      var particleSystem = new THREE.Points(geo, pMat);
+      s.scene.add(particleSystem);
 
-      var ringGeo = new THREE.TorusGeometry(4.8, 0.08, 16, 100);
-      var ringMat = new THREE.MeshBasicMaterial({ color: 0x10b981, transparent: true, opacity: 0.4 });
-      var ringMesh = new THREE.Mesh(ringGeo, ringMat);
-      ringMesh.rotation.x = Math.PI / 3;
-      aiGroup.add(ringMesh);
+      var waveBars = [];
+      var barCount = 48;
+      var barMat = new THREE.MeshBasicMaterial({ color: 0x10b981, transparent: true, opacity: 0.25 });
+      for (var i = 0; i < barCount; i++) {
+        var barGeo = new THREE.BoxGeometry(0.25, 0.5, 0.25);
+        var bar = new THREE.Mesh(barGeo, barMat.clone());
+        var angle = (i / barCount) * Math.PI * 2;
+        var radius = 6.5;
+        bar.position.set(Math.cos(angle) * radius, 0, Math.sin(angle) * radius);
+        bar.lookAt(0, 0, 0);
+        s.scene.add(bar);
+        waveBars.push(bar);
+      }
 
-      s.scene.add(aiGroup);
+      var listening = false;
+      var micBtn = document.getElementById('micBtn');
+      if (micBtn) {
+        micBtn.addEventListener('click', function(){
+          listening = !listening;
+          this.classList.toggle('active');
+        });
+      }
 
-      addStarParticleField(s, 0x10b981, 2800);
-
-      var baseAnimate = s.animate;
+      s.userData = { waveBars: waveBars, particleSystem: particleSystem };
       s.animate = function() {
-        var t = Date.now() * 0.0005;
-        aiGroup.rotation.y = t * 0.25;
-        aiGroup.rotation.z = Math.sin(t * 0.3) * 0.1;
-        if (baseAnimate) baseAnimate();
+        var t = Date.now() * 0.003;
+        particleSystem.rotation.y += 0.0008;
+        particleSystem.rotation.x = Math.sin(t * 0.08) * 0.06;
+
+        for (var i = 0; i < waveBars.length; i++) {
+          var bar = waveBars[i];
+          var amp = listening
+            ? (2 + Math.sin(t + i * 0.3) * 1.5)
+            : (0.3 + Math.sin(t * 0.5 + i * 0.5) * 0.15);
+          bar.scale.y = Math.max(0.1, amp);
+          var baseOpacity = listening ? 0.3 : 0.12;
+          bar.material.opacity = baseOpacity + Math.sin(t + i * 0.3) * 0.12;
+          bar.position.y = bar.scale.y * 0.25;
+        }
+
+        // Mouse parallax
+        smoothMX += (mouseX - smoothMX) * 0.03;
+        smoothMY += (mouseY - smoothMY) * 0.03;
+        s.camera.position.x = smoothMX * 2.5 + Math.sin(t * 0.1) * 1.5;
+        s.camera.position.y = -smoothMY * 2;
+        s.camera.position.z = 20 + Math.sin(t * 0.05) * 0.5;
+
+        // Scroll-reactive
+        var sv = scrollValues[1] * 0.0004;
+        s.camera.position.z += sv * 0.5;
+        particleSystem.rotation.z += sv * 0.0002;
+
+        s.camera.lookAt(0, 0, 0);
       };
 
       scenes.push(s);
     })();
 
-    // Helper to add glowing star particle field to any scene
-    function addStarParticleField(sceneObj, hexColor = 0x8b5cf6, count = 2500) {
+    // ---- Scene 2: Resume — floating indigo particles with bloom ----
+    (function(){
+      var s = makeScene({
+        camZ: 16,
+        bloomStrength: 0.25,
+        bloomRadius: 0.4,
+        bloomThreshold: 0.15
+      });
+
+      var count = 1200;
+      var pos = new Float32Array(count * 3);
+      var speeds = [];
+      for (var i = 0; i < count; i++) {
+        pos[i*3] = (Math.random() - 0.5) * 30;
+        pos[i*3+1] = (Math.random() - 0.5) * 40;
+        pos[i*3+2] = (Math.random() - 0.5) * 20 - 5;
+        speeds.push(0.2 + Math.random() * 0.8);
+      }
+      var geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+      var pMat = new THREE.PointsMaterial({
+        color: 0x6366f1, size: 0.1, transparent: true, opacity: 0.25,
+        blending: THREE.AdditiveBlending
+      });
+      var field = new THREE.Points(geo, pMat);
+      s.scene.add(field);
+
+      s.userData = { field: field, speeds: speeds };
+      s.animate = function() {
+        var t = Date.now() * 0.0002;
+        field.rotation.y += 0.0004;
+        field.rotation.x = Math.sin(t) * 0.04;
+
+        // Gentle vertical float
+        var positions = field.geometry.attributes.position.array;
+        for (var i = 0; i < count; i++) {
+          var idx = i * 3 + 1;
+          positions[idx] += Math.sin(Date.now() * 0.0005 * speeds[i] + i) * 0.002;
+          if (Math.abs(positions[idx]) > 20) positions[idx] *= -0.5;
+        }
+        field.geometry.attributes.position.needsUpdate = true;
+
+        // Mouse parallax
+        smoothMX += (mouseX - smoothMX) * 0.025;
+        smoothMY += (mouseY - smoothMY) * 0.025;
+        s.camera.position.x = smoothMX * 2;
+        s.camera.position.y = -smoothMY * 2;
+        s.camera.position.z = 16 + scrollValues[2] * 0.02;
+        s.camera.lookAt(0, 0, 0);
+      };
+
+      scenes.push(s);
+    })();
+
+    // ---- Scene 3: Jobs — purple star field with bloom ----
+    (function(){
+      var s = makeScene({
+        camZ: 18,
+        bloomStrength: 0.35,
+        bloomRadius: 0.5,
+        bloomThreshold: 0.1
+      });
+
+      var count = 1500;
+      var pos = new Float32Array(count * 3);
+      var origY = new Float32Array(count);
+      for (var i = 0; i < count; i++) {
+        pos[i*3] = (Math.random() - 0.5) * 60;
+        pos[i*3+1] = (Math.random() - 0.5) * 60;
+        pos[i*3+2] = (Math.random() - 0.5) * 40;
+        origY[i] = pos[i*3+1];
+      }
+      var geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+      var pMat = new THREE.PointsMaterial({
+        color: 0x8b5cf6, size: 0.1, transparent: true, opacity: 0.3,
+        blending: THREE.AdditiveBlending
+      });
+      var field = new THREE.Points(geo, pMat);
+      s.scene.add(field);
+
+      s.userData = { field: field, origY: origY, count: count };
+      s.animate = function() {
+        var t = Date.now() * 0.0003;
+        field.rotation.y += 0.0005;
+
+        // Twinkle: size variation
+        var sval = 0.08 + Math.sin(t * 2) * 0.04;
+        pMat.size = sval;
+
+        // Gentle wave
+        var positions = field.geometry.attributes.position.array;
+        for (var i = 0; i < count; i++) {
+          positions[i*3+1] = origY[i] + Math.sin(t * 2 + i * 0.1) * 1.5;
+        }
+        field.geometry.attributes.position.needsUpdate = true;
+
+        // Mouse parallax
+        smoothMX += (mouseX - smoothMX) * 0.03;
+        smoothMY += (mouseY - smoothMY) * 0.03;
+        s.camera.position.x = smoothMX * 3;
+        s.camera.position.y = -smoothMY * 2.5;
+        s.camera.position.z = 18 + scrollValues[3] * 0.015;
+        s.camera.lookAt(0, 0, 0);
+      };
+
+      scenes.push(s);
+    })();
+
+    // ---- Scene 4: Roadmap — spherical particle shell with bloom ----
+    (function(){
+      var s = makeScene({
+        camZ: 20,
+        bloomStrength: 0.45,
+        bloomRadius: 0.6,
+        bloomThreshold: 0.08
+      });
+
+      var count = 1500;
       var pos = new Float32Array(count * 3);
       var cols = new Float32Array(count * 3);
-      var baseColor = new THREE.Color(hexColor);
-
+      var origPos = new Float32Array(count * 3);
       for (var i = 0; i < count; i++) {
         var theta = Math.random() * Math.PI * 2;
         var phi = Math.acos(2 * Math.random() - 1);
-        var r = 12 + Math.random() * 20;
-        pos[i*3]   = r * Math.sin(phi) * Math.cos(theta);
+        var r = 7 + Math.random() * 14;
+        pos[i*3] = r * Math.sin(phi) * Math.cos(theta);
         pos[i*3+1] = r * Math.cos(phi);
         pos[i*3+2] = r * Math.sin(phi) * Math.sin(theta);
-
-        var c = baseColor.clone();
-        c.offsetHSL(Math.random() * 0.1 - 0.05, 0.2, Math.random() * 0.3 - 0.15);
+        origPos[i*3] = pos[i*3];
+        origPos[i*3+1] = pos[i*3+1];
+        origPos[i*3+2] = pos[i*3+2];
+        var c = new THREE.Color();
+        c.setHSL(0.55 + Math.random() * 0.3, 0.6, 0.4 + Math.random() * 0.3);
         cols[i*3] = c.r; cols[i*3+1] = c.g; cols[i*3+2] = c.b;
       }
-
-      var pGeo = new THREE.BufferGeometry();
-      pGeo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-      pGeo.setAttribute('color', new THREE.BufferAttribute(cols, 3));
-
+      var geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+      geo.setAttribute('color', new THREE.BufferAttribute(cols, 3));
       var pMat = new THREE.PointsMaterial({
-        size: 0.14, vertexColors: true, transparent: true, opacity: 0.65,
+        size: 0.1, vertexColors: true, transparent: true, opacity: 0.45,
         blending: THREE.AdditiveBlending, sizeAttenuation: true
       });
+      var field = new THREE.Points(geo, pMat);
+      s.scene.add(field);
 
-      var field = new THREE.Points(pGeo, pMat);
-      sceneObj.scene.add(field);
+      var light = new THREE.PointLight(0xd946ef, 0.3, 40);
+      light.position.set(5, 10, 15);
+      s.scene.add(light);
 
-      var light = new THREE.PointLight(hexColor, 0.6, 40);
-      light.position.set(0, 5, 10);
-      sceneObj.scene.add(light);
+      var light2 = new THREE.PointLight(0x6366f1, 0.25, 35);
+      light2.position.set(-8, -5, 10);
+      s.scene.add(light2);
 
-      sceneObj.userData = { field: field };
-      sceneObj.animate = function() {
-        var t = Date.now() * 0.0004;
+      s.userData = { field: field, origPos: origPos, count: count };
+      s.animate = function() {
+        var t = Date.now() * 0.0003;
         field.rotation.y = t * 0.08;
-        field.rotation.x = Math.sin(t * 0.2) * 0.05;
+        field.rotation.x = Math.sin(t * 0.12) * 0.05;
+
+        // Breathing motion
+        var positions = field.geometry.attributes.position.array;
+        var breathe = 1 + Math.sin(t * 1.5) * 0.08;
+        for (var i = 0; i < count; i++) {
+          positions[i*3] = origPos[i*3] * breathe;
+          positions[i*3+1] = origPos[i*3+1] * breathe;
+          positions[i*3+2] = origPos[i*3+2] * breathe;
+        }
+        field.geometry.attributes.position.needsUpdate = true;
+
+        // Mouse parallax
         smoothMX += (mouseX - smoothMX) * 0.03;
         smoothMY += (mouseY - smoothMY) * 0.03;
-        sceneObj.camera.position.x = smoothMX * 2;
-        sceneObj.camera.position.y = -smoothMY * 2;
-        sceneObj.camera.lookAt(0, 0, 0);
+        s.camera.position.x = smoothMX * 2.5;
+        s.camera.position.y = -smoothMY * 2;
+        s.camera.position.z = 20 + scrollValues[4] * 0.02;
+        s.camera.lookAt(0, 0, 0);
       };
+
+      scenes.push(s);
+    })();
+
+    // === Render loop ===
+    function animate() {
+      requestAnimationFrame(animate);
+      var s = scenes[activeTabIdx];
+      if (s) {
+        s.animate();
+        s.camera.aspect = window.innerWidth / window.innerHeight;
+        s.camera.updateProjectionMatrix();
+        s.composer.render();
+      }
     }
 
-    // Fill remaining scenes (Resume, Jobs, Roadmap) with glowing particle fields
-    var sceneColors = [0x6366f1, 0x10b981, 0x8b5cf6, 0x10b981, 0xd946ef];
-    for (var k = 2; k < 5; k++) {
-      var sObj = makeScene({ camZ: 24, bloomStrength: 0.5 });
-      addStarParticleField(sObj, sceneColors[k], 2800);
-      scenes.push(sObj);
+    // === Scroll tracking ===
+    function setupScrollTracking() {
+      var pages = document.querySelectorAll('.tab-page');
+      pages.forEach(function(page, idx){
+        page.addEventListener('scroll', function(){
+          scrollValues[idx] = this.scrollTop;
+        }, { passive: true });
+      });
     }
 
-    // Mouse Tracking
-    window.addEventListener('mousemove', function(e){
+    // === Mouse tracking ===
+    document.addEventListener('mousemove', function(e){
       mouseX = (e.clientX / window.innerWidth - 0.5) * 2;
       mouseY = (e.clientY / window.innerHeight - 0.5) * 2;
     });
-
-    // Render loop
-    function animate() {
-      requestAnimationFrame(animate);
-      if (scenes[activeTabIdx]) {
-        scenes[activeTabIdx].animate();
-        scenes[activeTabIdx].composer.render();
+    document.addEventListener('touchmove', function(e){
+      if (e.touches.length === 1) {
+        mouseX = (e.touches[0].clientX / window.innerWidth - 0.5) * 2;
+        mouseY = (e.touches[0].clientY / window.innerHeight - 0.5) * 2;
       }
-    }
+    }, { passive: true });
 
-    function setupScrollTracking() {
-      for (var i = 0; i < 5; i++) {
-        var page = document.querySelector('.tab-page[data-tab="' + i + '"]');
-        if (page) {
-          page.addEventListener('scroll', (function(idx){
-            return function(){ scrollValues[idx] = this.scrollTop; };
-          })(i));
-        }
-      }
-    }
-
-    function revealTabItems(idx) {
-      var page = document.querySelector('.tab-page[data-tab="' + idx + '"]');
+    // === Progressive reveal ===
+    function revealTabItems(tabIdx) {
+      var page = document.querySelector('.tab-page[data-tab="' + tabIdx + '"]');
       if (!page) return;
       var items = page.querySelectorAll('.reveal-item');
       items.forEach(function(el, i){
-        setTimeout(function(){ el.classList.add('revealed'); }, i * 60);
+        setTimeout(function(){
+          el.classList.add('revealed');
+        }, 60 * i + 80);
       });
     }
 
+    // === Tab switching ===
     window.switchTab = function(idx) {
-      if (idx === activeTabIdx && visitedTabs[idx]) return;
+      if (idx === activeTabIdx) return;
       var oldPage = document.querySelector('.tab-page[data-tab="' + activeTabIdx + '"]');
       var newPage = document.querySelector('.tab-page[data-tab="' + idx + '"]');
       if (!oldPage || !newPage) return;
@@ -984,21 +1111,30 @@
       setTimeout(function(){ oldPage.classList.remove('exit'); }, 500);
 
       newPage.classList.add('active');
+      newPage.style.transform = 'none';
+      newPage.style.opacity = '1';
+
       activeTabIdx = idx;
 
+      // Tab bar
       document.querySelectorAll('.bottom-tabs .tab').forEach(function(el){
         var isActive = parseInt(el.getAttribute('data-tab')) === idx;
         el.classList.toggle('active', isActive);
+        if (isActive) { el.setAttribute('aria-current', 'page'); el.setAttribute('aria-selected', 'true'); }
+        else { el.removeAttribute('aria-current'); el.setAttribute('aria-selected', 'false'); }
       });
 
+      // Progressive reveal on first visit
       if (!visitedTabs[idx]) {
         visitedTabs[idx] = true;
         setTimeout(function(){ revealTabItems(idx); }, 100);
       } else {
-        newPage.querySelectorAll('.reveal-item').forEach(function(el){ el.classList.add('revealed'); });
+        var items = newPage.querySelectorAll('.reveal-item');
+        items.forEach(function(el){ el.classList.add('revealed'); });
       }
     };
 
+    // === Resize ===
     window.addEventListener('resize', function(){
       for (var i = 0; i < scenes.length; i++) {
         var s = scenes[i];
@@ -1009,18 +1145,138 @@
       renderer.setSize(window.innerWidth, window.innerHeight);
     });
 
+    // === Init ===
     setupScrollTracking();
     animate();
 
+    // Hide splash after scenes are ready
     setTimeout(function(){
       var splash = document.getElementById('loading-splash');
       if (splash) splash.classList.add('hidden');
       visitedTabs[0] = true;
       setTimeout(function(){ revealTabItems(0); }, 120);
-    }, 1400);
-  </script>
+    }, 1700);
 
-  <!-- SkillBridge AI Core App Script (v2026 Cache Busted) -->
-  <script src="app.js?v=20260723_v2"></script>
+    // === Job cards data & render ===
+    (function(){
+      if (document.getElementById('jobsGrid')) {
+        var jobs = [
+          { company: "TechCorp", title: "Senior Frontend Engineer", tags: ["React","TypeScript","Next.js"], salary: "$145K–180K", match: 94, color: "#10b981" },
+          { company: "InnoVista", title: "Staff Full-Stack Developer", tags: ["Node.js","GraphQL","AWS"], salary: "$155K–195K", match: 91, color: "#10b981" },
+          { company: "DataFlow", title: "AI/ML Engineer", tags: ["Python","PyTorch","MLOps"], salary: "$160K–210K", match: 88, color: "#6366f1" },
+          { company: "CloudNine", title: "DevOps Platform Lead", tags: ["K8s","Terraform","CI/CD"], salary: "$150K–190K", match: 87, color: "#6366f1" },
+          { company: "Greenstone", title: "Product Designer (UX)", tags: ["Figma","Design Systems","Research"], salary: "$120K–155K", match: 85, color: "#8b5cf6" },
+          { company: "ShiftAI", title: "Backend Engineer — Go", tags: ["Go","PostgreSQL","gRPC"], salary: "$140K–175K", match: 83, color: "#8b5cf6" },
+          { company: "OrbitWorks", title: "Mobile Lead — React Native", tags: ["React Native","iOS","Android"], salary: "$135K–170K", match: 80, color: "#d946ef" },
+          { company: "Pinnacle", title: "Engineering Manager", tags: ["Leadership","Agile","Architecture"], salary: "$170K–220K", match: 78, color: "#d946ef" },
+          { company: "BaseLayer", title: "Security Engineer", tags: ["Security","PenTesting","IAM"], salary: "$130K–165K", match: 76, color: "#d946ef" },
+          { company: "VentureHub", title: "Technical Product Manager", tags: ["Product","Strategy","Analytics"], salary: "$145K–185K", match: 73, color: "#d946ef" },
+          { company: "NovaTech", title: "Data Engineer", tags: ["Spark","Airflow","BigQuery"], salary: "$130K–160K", match: 71, color: "#d946ef" },
+          { company: "BrightPath", title: "Junior Full-Stack Developer", tags: ["JavaScript","React","Python"], salary: "$85K–110K", match: 96, color: "#10b981" }
+        ];
+        var grid = document.getElementById('jobsGrid');
+        jobs.forEach(function(j, idx){
+          var card = document.createElement('div');
+          card.className = 'job-card reveal-item';
+          var circumference = 2 * Math.PI * 16;
+          var offset = circumference * (1 - j.match / 100);
+          card.innerHTML =
+            '<div class="top"><span class="company">' + j.company + '</span><div class="match-ring">' +
+            '<svg viewBox="0 0 40 40"><circle class="bg" cx="20" cy="20" r="16"/><circle class="progress" cx="20" cy="20" r="16" stroke-dasharray="' + circumference + '" stroke-dashoffset="' + offset + '" stroke="' + j.color + '"/></svg>' +
+            '<span class="label" style="color:' + j.color + '">' + j.match + '%</span></div></div>' +
+            '<div class="title">' + j.title + '</div>' +
+            '<div class="tags">' + j.tags.map(function(t){ return '<span>' + t + '</span>'; }).join('') + '</div>' +
+            '<div class="bottom"><span class="salary">' + j.salary + '</span><button class="apply-btn" data-idx="' + idx + '">Apply Now</button></div>';
+          grid.appendChild(card);
+        });
+        grid.querySelectorAll('.apply-btn').forEach(function(btn){
+          btn.addEventListener('click', function(){
+            this.textContent = 'Applied ✓';
+            this.classList.add('applied');
+            this.setAttribute('aria-disabled', 'true');
+          });
+        });
+      }
+    })();
+
+    // === Roadmap data & render ===
+    (function(){
+      if (document.getElementById('roadmap')) {
+        var steps = [
+          { title: "Career Foundation Assessment", desc: "AI evaluates current skills, experience, and career goals to build your baseline.", status: "completed" },
+          { title: "Core Programming: JavaScript Deep Dive", desc: "Master closures, promises, async/await, and ES6+ patterns used in 90% of interviews.", status: "completed" },
+          { title: "Frontend Architecture: React + TypeScript", desc: "Build production-grade components with proper typing, state management, and testing.", status: "completed" },
+          { title: "Backend Foundations: Node.js & APIs", desc: "RESTful API design, middleware patterns, authentication, and error handling.", status: "in-progress" },
+          { title: "Database Design & SQL", desc: "Schema design, indexing strategies, query optimization, and ORM patterns.", status: "in-progress" },
+          { title: "Cloud Fundamentals: AWS/GCP", desc: "Deploy, scale, and monitor applications using cloud-native services.", status: "locked" },
+          { title: "Containerization & Orchestration", desc: "Docker, Kubernetes, CI/CD pipelines, and infrastructure as code.", status: "locked" },
+          { title: "System Design & Architecture", desc: "Distributed systems, microservices, caching, and load balancing patterns.", status: "locked" },
+          { title: "AI/ML Engineering Fundamentals", desc: "LLMs, embeddings, RAG pipelines, and prompt engineering for production.", status: "locked" },
+          { title: "Testing & Quality Assurance", desc: "Unit, integration, E2E testing; TDD; property-based testing strategies.", status: "locked" },
+          { title: "Security Best Practices", desc: "OWASP Top 10, secure auth flows, encryption, and compliance fundamentals.", status: "locked" },
+          { title: "Performance Optimization", desc: "Profiling, caching strategies, CDN optimization, and Core Web Vitals.", status: "locked" },
+          { title: "Technical Leadership & Mentoring", desc: "Code reviews, architecture decisions, cross-team communication, and career growth.", status: "locked" },
+          { title: "Portfolio & Interview Preparation", desc: "Build showcase projects, practice system design interviews, and negotiate offers.", status: "locked" }
+        ];
+        var container = document.getElementById('roadmap');
+        steps.forEach(function(s, i){
+          var step = document.createElement('div');
+          step.className = 'step reveal-item';
+          var num = (i + 1).toString().padStart(2, '0');
+          step.innerHTML =
+            '<div class="node ' + s.status + '">' + num + '</div>' +
+            '<div class="content"><h4>' + s.title + '</h4><p>' + s.desc + '</p>' +
+            '<span class="status-badge ' + s.status + '">' + (s.status === 'completed' ? 'Completed' : s.status === 'in-progress' ? 'In Progress' : 'Upcoming') + '</span></div>';
+          container.appendChild(step);
+        });
+      }
+    })();
+
+    // === Chat logic ===
+    (function(){
+      var chatInput = document.getElementById('chatInput');
+      var sendBtn = document.getElementById('sendBtn');
+      var chatMessages = document.getElementById('chatMessages');
+      if (!chatInput || !sendBtn || !chatMessages) return;
+      var botResponses = [
+        "I found 12 job matches for your profile. Top match: Senior Frontend Engineer at TechCorp — 94% match score.",
+        "Your key skill gaps: Cloud Architecture (AWS/GCP), GraphQL, and TypeScript. Want me to suggest learning paths?",
+        "Based on your experience, a transition to AI/ML engineering would take roughly 6 months with focused upskilling.",
+        "The fastest-growing roles in your area: Data Engineer (+42%), AI Product Manager (+38%), DevSecOps (+35%).",
+        "Your resume scores in the top 15% for ATS compatibility. I can suggest optimizations to push it higher.",
+        "There's a new Senior Full Stack role at InnoVista that matches 97% of your skills. Apply?"
+      ];
+      function addMessage(text, isUser) {
+        var div = document.createElement('div');
+        div.className = 'msg ' + (isUser ? 'user' : 'bot');
+        div.textContent = text;
+        chatMessages.appendChild(div);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+      }
+      function updateSendBtn() {
+        sendBtn.disabled = chatInput.value.trim().length === 0;
+      }
+      function handleSend() {
+        var text = chatInput.value.trim();
+        if (!text) return;
+        addMessage(text, true);
+        chatInput.value = '';
+        updateSendBtn();
+        setTimeout(function(){
+          var resp = botResponses[Math.floor(Math.random() * botResponses.length)];
+          addMessage(resp, false);
+        }, 800 + Math.random() * 600);
+      }
+      chatInput.addEventListener('input', updateSendBtn);
+      sendBtn.addEventListener('click', handleSend);
+      chatInput.addEventListener('keydown', function(e){ if (e.key === 'Enter') handleSend(); });
+      updateSendBtn();
+    })();
+
+    // Force the jobs and roadmap reveal on their tabs
+    var origReveal = revealTabItems;
+    };
+  </script>
+  <script src="app.js"></script>
 </body>
 </html>
